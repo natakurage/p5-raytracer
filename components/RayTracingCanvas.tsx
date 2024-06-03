@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import p5Types from 'p5'
 import * as rt from "../utils/raytracing"
+import { Camera } from '../utils/camera'
 
 const Sketch = dynamic(() => import('react-p5').then((mod) => mod.default), {
   ssr: false,
@@ -11,24 +12,29 @@ const Sketch = dynamic(() => import('react-p5').then((mod) => mod.default), {
 export const RayTracingCanvas = () => {
 
   let scene: rt.scene.Scene
-  const size = 500
-  const nSamples = 1024
+  const xSize = 500
+  const ySize = 500
+  const nSamples = 10
 
   const preload = (p5: p5Types) => {
   }
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
-    p5.createCanvas(size, size).parent(canvasParentRef)
+    p5.createCanvas(xSize, ySize).parent(canvasParentRef)
     p5.fill("gray")
     p5.text("click to render", p5.width / 2, p5.height / 2)
   }
 
   const render = (p5: p5Types, nSamples: number) => {
     console.log("render started")
+    const camera = new Camera(
+      p5, p5.createVector(0, 10, 10),
+      p5.createVector(0, -1, -1).normalize(), 0.1, xSize / ySize
+    )
     scene = new rt.scene.Scene([
-      new rt.primitives.Sphere(p5, p5.createVector(0, 0, -5), 1),
-      new rt.primitives.Sphere(p5, p5.createVector(0, -101, -5), 100)
-    ], p5.createVector(0, 0, 5), p5.createVector(1, 1, 1))
+      new rt.primitives.Sphere(p5, p5.createVector(0, 0, 0), 1),
+      new rt.primitives.Sphere(p5, p5.createVector(0, -101, 0), 100)
+    ], camera, p5.createVector(1, 1, 1))
 
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
@@ -49,16 +55,17 @@ export const RayTracingCanvas = () => {
     const pixelColor = p5.createVector(0, 0, 0)
     let validSamples = 0
     for (let sample = 0; sample < nSamples; sample++) {
-      const screen_pos = p5.createVector(
-        2 * (j / p5.width) - 1,
-        2 * (1 - i / p5.height) - 1,
-        0
-      ).add(p5.createVector(
-        p5.random(-0.5, 0.5) * 2 / p5.width,
-        p5.random(-0.5, 0.5) * 2 / p5.height,
-        0
-      ))
-      let ray = new rt.ray.Ray(scene.eyePos, (p5Types.Vector.sub(screen_pos, scene.eyePos)))
+      // const screen_pos = p5.createVector(
+      //   2 * (j / p5.width) - 1,
+      //   2 * (1 - i / p5.height) - 1,
+      //   0
+      // ).add(p5.createVector(
+      //   p5.random(-0.5, 0.5) * 2 / p5.width,
+      //   p5.random(-0.5, 0.5) * 2 / p5.height,
+      //   0
+      // ))
+      // let ray = new rt.ray.Ray(scene.eyePos, (p5Types.Vector.sub(screen_pos, scene.eyePos)))
+      let ray = scene.camera.generateRay(j / p5.width, i / p5.height)
 
       let depth = 0
       const max_depth = 10

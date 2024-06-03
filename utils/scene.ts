@@ -1,15 +1,16 @@
 import p5Types from 'p5'
 import { HitRecord, Sphere } from './primitives';
 import { Ray } from './ray';
+import { Camera } from './camera';
 
 class Scene {
   objects: Array<Sphere>
-  eyePos: p5Types.Vector
+  camera: Camera
   ambientColor: p5Types.Vector
   
-  constructor(objects: Array<Sphere>, eyePos: p5Types.Vector, ambientColor: p5Types.Vector) {
+  constructor(objects: Array<Sphere>, camera: Camera, ambientColor: p5Types.Vector) {
     this.objects = objects
-    this.eyePos = eyePos
+    this.camera = camera
     this.ambientColor = ambientColor
   }
 
