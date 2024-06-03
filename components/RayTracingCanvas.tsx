@@ -28,8 +28,8 @@ export const RayTracingCanvas = () => {
   const render = (p5: p5Types, nSamples: number) => {
     console.log("render started")
     const camera = new Camera(
-      p5, p5.createVector(0, 10, 10),
-      p5.createVector(0, -1, -1).normalize(), 0.1, xSize / ySize
+      p5, p5.createVector(0, 1, 5),
+      p5.createVector(0, 0, -1).normalize(), 0.1, xSize / ySize
     )
     scene = new rt.scene.Scene([
       new rt.primitives.Sphere(p5, p5.createVector(0, 0, 0), 1),

@@ -125,9 +125,9 @@ class MicrofacetSpecularBRDF extends Material {
     rec.fresnel = this.schlickFresnel(lhDot)
     const geo = this.hcssm(rec.l, v, hRec.normal)
     rec.brdf = rec.fresnel.copy().mult(ndf * geo).div(
-      4 * dot(rec.l, hRec.normal) * dot(v, hRec.normal) 
+      Math.max(4 * dot(rec.l, hRec.normal) * dot(v, hRec.normal), 1e-6)
     )
-    rec.pdf = ndf * hnDot / (4 * dot(rec.l, half))
+    rec.pdf = ndf * hnDot / (Math.max(4 * dot(rec.l, half), 1e-6))
     return rec
   }
 

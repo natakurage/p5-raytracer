@@ -35,7 +35,7 @@ class Sphere {
       // new DiffuseBRDF(p5, p5.createVector(0.8, 0.1, 0.1))
       // new MetalBRDF(p5, p5.createVector(1, 1, 1))
       // new MicrofacetSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.1)
-      new DiffuseSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.5)
+      new DiffuseSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.01)
   }
   
   hit = (r: ray.Ray) => {
@@ -78,7 +78,7 @@ class Sphere {
     }
     rec.normal = normal
     let upVec = this.p5.createVector(0, 1, 0)
-    if (p5Types.Vector.dot(normal, upVec) < eps) {
+    if (1 - Math.abs(p5Types.Vector.dot(normal, upVec)) < 1e-6) {
       upVec = this.p5.createVector(0, 0, 1)
     }
     rec.tangent = rec.normal.copy().cross(upVec).normalize()
