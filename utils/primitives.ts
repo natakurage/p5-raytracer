@@ -35,7 +35,7 @@ class Sphere {
       // new DiffuseBRDF(p5, p5.createVector(0.8, 0.1, 0.1))
       // new MetalBRDF(p5, p5.createVector(1, 1, 1))
       // new MicrofacetSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.1)
-      new DiffuseSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.01)
+      new DiffuseSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.5)
   }
   
   hit = (r: ray.Ray) => {

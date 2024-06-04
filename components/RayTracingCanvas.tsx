@@ -12,7 +12,7 @@ const Sketch = dynamic(() => import('react-p5').then((mod) => mod.default), {
 export const RayTracingCanvas = () => {
 
   let scene: rt.scene.Scene
-  const xSize = 500
+  const xSize = 1000
   const ySize = 500
   const nSamples = 10
 
@@ -29,7 +29,7 @@ export const RayTracingCanvas = () => {
     console.log("render started")
     const camera = new Camera(
       p5, p5.createVector(0, 1, 5),
-      p5.createVector(0, 0, -1).normalize(), 0.1, xSize / ySize
+      p5.createVector(0, 0, -1).normalize(), 0.1
     )
     scene = new rt.scene.Scene([
       new rt.primitives.Sphere(p5, p5.createVector(0, 0, 0), 1),
@@ -49,6 +49,7 @@ export const RayTracingCanvas = () => {
       }
     }
     p5.updatePixels()
+    console.log("render finished!")
   }
 
   const getPixelColor = (p5: p5Types, i: number, j: number, nSamples: number, scene: rt.scene.Scene) => {
@@ -65,7 +66,7 @@ export const RayTracingCanvas = () => {
       //   0
       // ))
       // let ray = new rt.ray.Ray(scene.eyePos, (p5Types.Vector.sub(screen_pos, scene.eyePos)))
-      let ray = scene.camera.generateRay(j / p5.width, i / p5.height)
+      let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
 
       let depth = 0
       const max_depth = 10
