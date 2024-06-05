@@ -54,6 +54,11 @@ class Renderer {
         if (rec.success) {
           let lnDot = p5Types.Vector.dot(rec.normal, rec.l)
           ray_color.mult(rec.brdf.mult(lnDot).div(rec.pdf))
+          ray_color.add(rec.Le)
+          if (rec.deletePath) {
+            pixelColor.add(scene.ambientColor.copy().mult(ray_color))
+            break
+          }
           ray = new Ray(rec.pos, rec.l)
         } else {
           pixelColor.add(scene.ambientColor.copy().mult(ray_color))
