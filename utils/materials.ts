@@ -60,14 +60,22 @@ class DiffuseBRDF extends Material {
 
   newSample = (r: Ray, hRec: HitRecord) => {
     const rec = new MaterialSampleRecord()
+    rec.l = randomOnHemiSphere(this.p5, hRec.normal)
+
+    // sample light vector
+    const rand1 = this.p5.random()
+    const cosTheta = rand1 ** (1/2)
+    const sinTheta = (1 - cosTheta**2) ** (1/2)
+    const phi = this.p5.random(0, 2 * this.p5.PI)
+    const lInTangent = this.p5.createVector(
+      sinTheta * this.p5.cos(phi),
+      sinTheta * this.p5.sin(phi),
+      cosTheta
+    )
+    rec.l = tangentToWorld(
+      this.p5, lInTangent, hRec.tangent, hRec.binormal, hRec.normal)
     rec.brdf = this.diffuseColor.copy().div(this.p5.PI)
-    rec.pdf = 1 / (2 * this.p5.PI)
-    let l = randomOnUnitSphere(this.p5)
-    let lnDot = dot(hRec.normal, l)
-    if (lnDot < 0) {
-      l = l.mult(-1)
-    }
-    rec.l = l
+    rec.pdf = p5Types.Vector.dot(rec.l, hRec.normal) / this.p5.PI
     return rec
   }
 }
