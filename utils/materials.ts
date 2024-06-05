@@ -2,12 +2,14 @@ import p5Types from "p5"
 import { Ray } from "./ray"
 import { randomOnHemiSphere, randomOnUnitSphere } from "./utils"
 import { HitRecord } from "./primitives"
+import { Mate } from "next/font/google"
 
 class MaterialSampleRecord {
   brdf!: p5Types.Vector
   l!: p5Types.Vector
   pdf!: number
   fresnel!: p5Types.Vector | null
+  Le!: p5Types.Vector
 }
 
 const dot = p5Types.Vector.dot
@@ -244,8 +246,27 @@ class NormalMetalBRDF extends Material {
   }
 }
 
+class SimpleEmitter extends Material {
+  color: p5Types.Vector
+  emittance: number
+  constructor(p5: p5Types, color: p5Types.Vector, emittance: number) {
+    super(p5)
+    this.color = color
+    this.emittance = emittance
+  }
+
+  newSample = (r: Ray, hRec: HitRecord) => {
+    const rec = new MaterialSampleRecord()
+    hRec.deletePath = true
+    rec.brdf = this.p5.createVector(0, 0, 0)
+    rec.pdf = 1
+    rec.Le = this.color.copy().mult(this.emittance).div(this.p5.PI)
+    return rec
+  }
+}
+
 export {
   MaterialSampleRecord, Material, DiffuseBRDF,
   MetalBRDF, MicrofacetSpecularBRDF, NormalDiffuseBRDF, NormalMetalBRDF,
-  DiffuseSpecularBRDF
+  DiffuseSpecularBRDF, SimpleEmitter
 }

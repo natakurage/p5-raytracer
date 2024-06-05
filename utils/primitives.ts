@@ -18,6 +18,8 @@ class HitRecord {
   brdf!: p5Types.Vector
   pdf!: number
   l!: p5Types.Vector
+  deletePath = false
+  Le!: p5Types.Vector
 }
 
 class Sphere {
@@ -87,6 +89,7 @@ class Sphere {
     rec.brdf = mRec.brdf
     rec.pdf = mRec.pdf
     rec.l = mRec.l
+    rec.Le = mRec.Le
     return rec
   }
 
