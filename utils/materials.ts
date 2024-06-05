@@ -260,7 +260,7 @@ class SimpleEmitter extends Material {
     hRec.deletePath = true
     rec.brdf = this.p5.createVector(0, 0, 0)
     rec.pdf = 1
-    rec.Le = this.color.copy().mult(this.emittance)
+    rec.Le = this.color.copy().mult(this.emittance).div(this.p5.PI)
     return rec
   }
 }

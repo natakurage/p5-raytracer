@@ -20,7 +20,7 @@ export const RayTracingCanvas = () => {
   }
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
-    const xSize = 1000
+    const xSize = 500
     const ySize = 500
     p5.createCanvas(xSize, ySize).parent(canvasParentRef)
     p5.fill("gray")
@@ -37,19 +37,19 @@ export const RayTracingCanvas = () => {
       p5, p5.createVector(0.5, 0.5, 0.5),  0.2
     )
     const light = new SimpleEmitter(
-      p5, p5.createVector(1, 1, 1), 100
+      p5, p5.createVector(1, 1, 1), 1
     )
     const ambColor = p5.createVector(0.5, 0.5, 0.5)
     scene = new rt.scene.Scene([
       new rt.primitives.Sphere(
-        p5, p5.createVector(1, 0.2, 5), 0.1, light),
+        p5, p5.createVector(0.7, 0.7, 0.7), 0.1, light),
       new rt.primitives.Sphere(
         p5, p5.createVector(0, 0, 0), 1, mat1),
       new rt.primitives.Sphere(
         p5, p5.createVector(0, -101, 0), 100, mat2)
     ], camera, ambColor)
 
-    renderer = new Renderer(10)
+    renderer = new Renderer(50)
   }
 
   const draw = (p5: p5Types) => {
