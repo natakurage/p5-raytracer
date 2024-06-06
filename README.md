@@ -1,3 +1,9 @@
+This is a simple path tracer written in TypeScript, using p5.js(react-p5) and Next.js.
+
+Just for my learning and may not work correctly.
+
+***
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
