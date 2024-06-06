@@ -2,6 +2,7 @@ import p5Types from "p5"
 import { Ray } from "./ray"
 import { randomOnHemiSphere, randomOnUnitSphere } from "./utils"
 import { HitRecord } from "./primitives"
+import { Texture } from "./textures"
 
 class MaterialSampleRecord {
   brdf!: p5Types.Vector
@@ -49,16 +50,17 @@ class Material {
 }
 
 class DiffuseBRDF extends Material {
-  diffuseColor: p5Types.Vector
+  diffuseColor: Texture
 
-  constructor(p5: p5Types, diffuseColor: p5Types.Vector) {
+  constructor(p5: p5Types, diffuseColor: Texture) {
     super(p5)
     this.diffuseColor = diffuseColor
   }
 
   newSample = (r: Ray, hRec: HitRecord) => {
     const rec = new MaterialSampleRecord()
-    rec.brdf = this.diffuseColor.copy().div(this.p5.PI)
+    const diffuseColor = this.diffuseColor.sample(hRec.pos)
+    rec.brdf = diffuseColor.copy().div(this.p5.PI)
     rec.pdf = 1 / (2 * this.p5.PI)
     let l = randomOnUnitSphere(this.p5)
     let lnDot = dot(hRec.normal, l)
@@ -71,9 +73,9 @@ class DiffuseBRDF extends Material {
 }
 
 class MetalBRDF extends Material {
-  metalColor: p5Types.Vector
+  metalColor: Texture
 
-  constructor(p5: p5Types, metalColor: p5Types.Vector) {
+  constructor(p5: p5Types, metalColor: Texture) {
     super(p5)
     this.metalColor = metalColor
   }
@@ -82,17 +84,18 @@ class MetalBRDF extends Material {
     const rec = new MaterialSampleRecord()
     const v = r.direction.copy().normalize().mult(-1)
     rec.l = reflect(v, hRec.normal)
-    rec.brdf = this.metalColor.copy().div(dot(rec.l, hRec.normal))
+    const metalColor = this.metalColor.sample(hRec.pos)
+    rec.brdf = metalColor.copy().div(dot(rec.l, hRec.normal))
     rec.pdf = 1
     return rec
   }
 }
 
 class MicrofacetSpecularBRDF extends Material {
-  F0: p5Types.Vector
+  F0: Texture
   alpha: number
 
-  constructor(p5: p5Types, F0: p5Types.Vector, roughness: number) {
+  constructor(p5: p5Types, F0: Texture, roughness: number) {
     super(p5)
     this.F0 = F0
     this.alpha = roughness ** 2
@@ -122,7 +125,8 @@ class MicrofacetSpecularBRDF extends Material {
     const lhDot = saturate(dot(rec.l, half))
 
     const ndf = this.GGX(hnDot)
-    rec.fresnel = this.schlickFresnel(lhDot)
+    const F0 = this.F0.sample(hRec.pos)
+    rec.fresnel = this.schlickFresnel(lhDot, F0)
     const geo = this.hcssm(rec.l, v, hRec.normal)
     rec.brdf = rec.fresnel.copy().mult(ndf * geo).div(
       Math.max(4 * dot(rec.l, hRec.normal) * dot(v, hRec.normal), 1e-6)
@@ -131,10 +135,10 @@ class MicrofacetSpecularBRDF extends Material {
     return rec
   }
 
-  schlickFresnel = (lhDot: number, approx = true) => {
+  schlickFresnel = (lhDot: number, F0: p5Types.Vector, approx = true) => {
     if (approx) {
-      const oneMinusF0 = this.F0.copy().mult(-1).add(1, 1, 1)
-      return oneMinusF0.mult((1 - lhDot) ** 5).add(this.F0)
+      const oneMinusF0 = F0.copy().mult(-1).add(1, 1, 1)
+      return oneMinusF0.mult((1 - lhDot) ** 5).add(F0)
     }
     else {
       throw new Error("not implemented")
@@ -174,10 +178,10 @@ class MicrofacetSpecularBRDF extends Material {
 class DiffuseSpecularBRDF extends Material {
   diffuseBRDF: DiffuseBRDF
   specularBRDF: MicrofacetSpecularBRDF
-  baseColor: p5Types.Vector
+  baseColor: Texture
   roughness: number
 
-  constructor(p5: p5Types, baseColor: p5Types.Vector, roughness: number) {
+  constructor(p5: p5Types, baseColor: Texture, roughness: number) {
     super(p5)
     this.baseColor = baseColor
     this.roughness = roughness ** 2
