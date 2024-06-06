@@ -32,46 +32,37 @@ class Renderer {
 
   renderPixel = (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) => {
     const pixelColor = p5.createVector(0, 0, 0)
-    let validSamples = 0
     for (let sample = 0; sample < nSamples; sample++) {
-      // const screen_pos = p5.createVector(
-      //   2 * (j / p5.width) - 1,
-      //   2 * (1 - i / p5.height) - 1,
-      //   0
-      // ).add(p5.createVector(
-      //   p5.random(-0.5, 0.5) * 2 / p5.width,
-      //   p5.random(-0.5, 0.5) * 2 / p5.height,
-      //   0
-      // ))
-      // let ray = new rt.ray.Ray(scene.eyePos, (p5Types.Vector.sub(screen_pos, scene.eyePos)))
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
-
-      let depth = 0
       const max_depth = 10
-      const ray_color = p5.createVector(1, 1, 1)
-      while (depth < max_depth) {
-        const rec = scene.hit(ray)
-        if (rec.success) {
-          let lnDot = p5Types.Vector.dot(rec.normal, rec.l)
-          ray_color.mult(rec.brdf.mult(lnDot).div(rec.pdf))
-          ray_color.add(rec.Le)
-          if (rec.deletePath) {
-            pixelColor.add(scene.ambientColor.copy().mult(ray_color))
-            break
-          }
-          ray = new Ray(rec.pos, rec.l)
-        } else {
-          pixelColor.add(scene.ambientColor.copy().mult(ray_color))
-          validSamples++
+      pixelColor.add(this.trace(p5, ray, scene, max_depth))
+    }
+    return pixelColor.div(nSamples)
+  }
+
+  trace = (p5: p5Types, ray: Ray, scene: Scene,  max_depth: number) => {
+    const rayColor = p5.createVector(0, 0, 0)
+    const throughput = p5.createVector(1, 1, 1)
+    let depth = 0
+    while (depth < max_depth) {
+      const rec = scene.hit(ray)
+      if (rec.success) {
+        if (rec.Le) {
+          rayColor.add(rec.Le.copy().mult(throughput))
+        }
+        if (rec.deletePath) {
           break
         }
-        depth++
+        let lnDot = p5Types.Vector.dot(rec.normal, rec.l)
+        throughput.mult(rec.brdf).mult(lnDot).div(rec.pdf)
+        ray = new Ray(rec.pos, rec.l)
+      } else {
+        rayColor.add(scene.ambientColor.copy().mult(throughput))
+        break
       }
+      depth++
     }
-    if (validSamples !== 0) {      
-      pixelColor.div(validSamples)
-    }
-    return pixelColor
+    return rayColor
   }
 }
 
