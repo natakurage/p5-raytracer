@@ -7,11 +7,13 @@ import {
   NormalMetalBRDF,
   DiffuseSpecularBRDF
 } from "./materials"
+import { CheckerTexture, UniformColorTexture } from "./textures"
 
 class HitRecord {
   success!: boolean
   t!: number
   pos!: p5Types.Vector
+  uv!: p5Types.Vector
   normal!: p5Types.Vector
   tangent!: p5Types.Vector
   binormal!: p5Types.Vector
@@ -37,7 +39,12 @@ class Sphere {
       // new DiffuseBRDF(p5, p5.createVector(0.8, 0.1, 0.1))
       // new MetalBRDF(p5, p5.createVector(1, 1, 1))
       // new MicrofacetSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.1)
-      new DiffuseSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.5)
+      new DiffuseSpecularBRDF(p5,
+        new CheckerTexture(
+          p5, p5.createVector(0.8, 0.1, 0.1),
+          p5.createVector(0.1, 0.1, 0.1),2
+        ),
+      0.5)
   }
   
   hit = (r: ray.Ray) => {
@@ -86,6 +93,10 @@ class Sphere {
     rec.tangent = rec.normal.copy().cross(upVec).normalize()
     rec.binormal = rec.tangent.copy().cross(rec.normal).normalize()
     const mRec = this.material.newSample(r, rec)
+    rec.uv = this.p5.createVector(
+      this.p5.acos(rec.pos.z / this.radius),
+      this.p5.atan2(rec.pos.y, rec.pos.x)
+    )
     rec.brdf = mRec.brdf
     rec.pdf = mRec.pdf
     rec.l = mRec.l

@@ -6,7 +6,7 @@ class Texture {
     this.p5 = p5
   }
 
-  sample = (pos: p5Types.Vector) => {
+  sample = (uv: p5Types.Vector) => {
     throw new Error("not implemented")
     return this.p5.createVector(0, 0, 0)
   }
@@ -19,7 +19,7 @@ class UniformColorTexture extends Texture {
     this.color = color
   }
 
-  sample = (pos: p5Types.Vector) => {
+  sample = (uv: p5Types.Vector) => {
     return this.color.copy()
   }
 }
@@ -35,13 +35,13 @@ class CheckerTexture extends Texture {
     this.scale = scale
   }
 
-  sample = (pos: p5Types.Vector) => {
+  sample = (uv: p5Types.Vector) => {
     const mod = (n: number , d: number) => ((n % d) + d) % d
-    if ((mod(this.scale * pos.x, 1) < 0.5) === (mod(this.scale * pos.y, 1) < 0.5)) {
+    if ((mod(this.scale * uv.x, 1) < 0.5) === (mod(this.scale * uv.y, 1) < 0.5)) {
       return this.color1.copy()
     }
     return this.color2.copy()
   }
 }
 
-export { Texture, UniformColorTexture }
+export { Texture, UniformColorTexture, CheckerTexture }
