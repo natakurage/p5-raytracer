@@ -6,6 +6,7 @@ import * as rt from "../utils/raytracing"
 import { Camera } from '../utils/camera'
 import { Renderer } from '../utils/renderer'
 import { DiffuseBRDF, DiffuseSpecularBRDF, MicrofacetSpecularBRDF, SimpleEmitter } from '../utils/materials'
+import { CheckerTexture, UniformColorTexture } from '../utils/textures'
 
 const Sketch = dynamic(() => import('react-p5').then((mod) => mod.default), {
   ssr: false,
@@ -30,11 +31,18 @@ export const RayTracingCanvas = () => {
       p5, p5.createVector(0, 0, 10),
       p5.createVector(0, 0, -1).normalize(), 0.1
     )
-    const mat1 = new DiffuseBRDF(
-      p5, p5.createVector(0.7, 0.5, 0.5)
+    const tex1 = new CheckerTexture(
+      p5,
+      p5.createVector(0.7, 0.5, 0.5),
+      p5.createVector(0.8, 0.8, 0.8),
+      5
     )
+    const tex2 = new UniformColorTexture(
+      p5, p5.createVector(0.5, 0.5, 0.5)
+    )
+    const mat1 = new DiffuseBRDF(p5, tex1)
     const mat2 = new DiffuseSpecularBRDF(
-      p5, p5.createVector(0.5, 0.5, 0.5),  0.2
+      p5, tex2,  0.2
     )
     const light = new SimpleEmitter(
       p5, p5.createVector(1, 1, 1), 1
