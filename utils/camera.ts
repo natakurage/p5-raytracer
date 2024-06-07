@@ -22,7 +22,7 @@ class Camera {
     this.sensorSize = sensorSize
   }
 
-  generateRay = (j: number, i: number, width: number, height: number) => {
+  generateRay (j: number, i: number, width: number, height: number) {
     // 2 * nx - 1,
     // 2 * ny - 1,
     // 0

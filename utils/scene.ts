@@ -14,7 +14,7 @@ class Scene {
     this.ambientColor = ambientColor
   }
 
-  hit = (r: Ray) => {
+  hit (r: Ray) {
     let min_t = Infinity
     let closest_rec: HitRecord | null = null
     for (let obj of this.objects) {

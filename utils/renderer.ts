@@ -10,7 +10,7 @@ class Renderer {
     this.nSamples = nSamples
   }
 
-  render = (p5: p5Types, scene: Scene, nSamples?: number) => {
+  render (p5: p5Types, scene: Scene, nSamples?: number) {
     nSamples = nSamples ?? this.nSamples
 
     console.log("render started")
@@ -31,7 +31,7 @@ class Renderer {
     console.log("render finished!")
   }
 
-  renderPixel = (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) => {
+  renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) {
     let pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
@@ -45,7 +45,7 @@ class Renderer {
     return pixelColor.div(nSamples)
   }
 
-  trace = (ray: Ray, scene: Scene,  max_depth: number) => {
+  trace (ray: Ray, scene: Scene,  max_depth: number) {
     // const test = new Vector3(1, 1, 1)
     // // console.log(test.x, test.y, test.z)
     // return test

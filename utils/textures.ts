@@ -4,7 +4,7 @@ class Texture {
   constructor() {
   }
 
-  sample = (uv: Vector2) => {
+  sample (uv: Vector2) {
     throw new Error("not implemented")
     return new Vector3(0, 0, 0)
   }
@@ -17,7 +17,7 @@ class UniformColorTexture extends Texture {
     this.color = color
   }
 
-  sample = (uv: Vector2) => {
+  sample (uv: Vector2) {
     return this.color
   }
 }
@@ -33,7 +33,7 @@ class CheckerTexture extends Texture {
     this.scale = scale
   }
 
-  sample = (uv: Vector2) => {
+  sample (uv: Vector2) {
     const mod = (n: number , d: number) => ((n % d) + d) % d
     if ((mod(this.scale * uv.x, 1) < 0.5) === (mod(this.scale * uv.y, 1) < 0.5)) {
       return this.color1

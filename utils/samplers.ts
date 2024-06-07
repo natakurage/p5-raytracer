@@ -4,16 +4,16 @@ class Sampler {
     if (seed) { this.seed = seed }
   }
 
-  sample1D = () => {
+  sample1D () {
     throw new Error("not implemented")
     return 0
   }
 
-  sampleND = (n: number) => {
+  sampleND (n: number) {
     return Array.from({length: n}).map(() => {this.sample1D})
   }
 
-  sample2D = () => {
+  sample2D () {
     return [this.sample1D(), this.sample1D()]
   }
 
@@ -24,7 +24,7 @@ class IndependentSampler extends Sampler{
     super(seed)
   }
 
-  sample1D = () => {
+  sample1D () {
     return 0
   }
 }

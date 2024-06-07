@@ -8,7 +8,7 @@ class Ray {
     this.direction = direction
   }
 
-  at = (t: number) => {
+  at (t: number) {
     return this.origin.add(this.direction.mult(t))
   }
 }

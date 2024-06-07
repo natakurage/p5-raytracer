@@ -41,7 +41,7 @@ class Material {
   constructor() {
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     throw new Error("not implemented")
     return new MaterialSampleRecord()
   }
@@ -55,7 +55,7 @@ class DiffuseBRDF extends Material {
     this.diffuseColor = diffuseColor
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
 
     // sample light vector
@@ -84,7 +84,7 @@ class MetalBRDF extends Material {
     this.metalColor = metalColor
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     const v = r.direction.normalized().mult(-1)
     rec.l = reflect(v, hRec.normal)
@@ -105,7 +105,7 @@ class MicrofacetSpecularBRDF extends Material {
     this.alpha = roughness ** 2
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     // this.testGGX()
     
@@ -138,7 +138,7 @@ class MicrofacetSpecularBRDF extends Material {
     return rec
   }
 
-  schlickFresnel = (lhDot: number, F0: Vector3, approx = true) => {
+  schlickFresnel (lhDot: number, F0: Vector3, approx = true) {
     if (approx) {
       const oneMinusF0 = F0.mult(-1).add(new Vector3(1, 1, 1))
       return oneMinusF0.mult((1 - lhDot) ** 5).add(F0)
@@ -148,13 +148,13 @@ class MicrofacetSpecularBRDF extends Material {
     }
   }
 
-  GGX = (hnDot: number) => {
+  GGX (hnDot: number) {
     const alphaSq = this.alpha ** 2
     const step = hnDot > 0 ? 1 : 0
     return step * alphaSq / (Math.PI * (hnDot ** 2 * (alphaSq-1) +1) ** 2)
   }
 
-  testGGX = () => {
+  testGGX () {
     const N = 10000
     let total = 0
     for (let i = 0; i < N; i++) {
@@ -166,7 +166,7 @@ class MicrofacetSpecularBRDF extends Material {
     alert(total / N * 2 * Math.PI)
   }
 
-  hcssm = (l: Vector3, v: Vector3, normal: Vector3) => {
+  hcssm (l: Vector3, v: Vector3, normal: Vector3) {
     const alphaSq = this.alpha ** 2
     const lambda = (w: Vector3) => {
       const whDot = w.dot(normal)
@@ -192,7 +192,7 @@ class DiffuseSpecularBRDF extends Material {
     this.specularBRDF = new MicrofacetSpecularBRDF(baseColor, roughness ** 2)
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     const diffRec = this.diffuseBRDF.newSample(r, hRec)
     const specRec = this.specularBRDF.newSample(r, hRec)
@@ -219,7 +219,7 @@ class NormalDiffuseBRDF extends Material {
     super()
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     const diffuseColor = hRec.binormal.add(new Vector3(1, 1, 1)).mult(0.5)
     rec.brdf = diffuseColor.div(Math.PI)
@@ -240,7 +240,7 @@ class NormalMetalBRDF extends Material {
     super()
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     const v = r.direction.normalized().mult(-1)
     rec.l = reflect(v, hRec.normal)
@@ -260,7 +260,7 @@ class SimpleEmitter extends Material {
     this.emittance = emittance
   }
 
-  newSample = (r: Ray, hRec: HitRecord) => {
+  newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     hRec.deletePath = true
     rec.brdf = new Vector3(0, 0, 0)

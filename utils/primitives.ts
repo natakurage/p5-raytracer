@@ -45,7 +45,7 @@ class Sphere {
       0.5)
   }
   
-  hit = (r: ray.Ray) => {
+  hit (r: ray.Ray) {
     const eps = 0.001
 
     const rec = new HitRecord()
