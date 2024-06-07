@@ -14,7 +14,7 @@ const randomOnUnitSphere = () => {
 const randomOnHemiSphere = (normal: Vector3) => {
   let vec = randomOnUnitSphere()
   if (vec.dot(normal) < 0) {
-    vec.mult(-1)
+    vec = vec.mult(-1)
   }
   return vec
 }

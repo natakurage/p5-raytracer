@@ -17,8 +17,7 @@ export const RayTracingCanvas = () => {
   }
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
-    const test1 = new rt.vector.Vector3(1, 2, 3)
-    const test2 = new rt.vector.Vector3(4, 5, 6)
+
 
     const xSize = 500
     const ySize = 500
@@ -55,7 +54,7 @@ export const RayTracingCanvas = () => {
         new rt.vector.Vector3(0, -101, 0), 100, mat2)
     ], camera, ambColor)
 
-    renderer = new rt.renderer.Renderer(1)
+    renderer = new rt.renderer.Renderer(10)
   }
 
   const draw = (p5: p5Types) => {

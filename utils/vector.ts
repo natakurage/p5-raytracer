@@ -1,3 +1,7 @@
+interface constructorCaller<T> {
+  
+}
+
 abstract class Vector {
   protected _e: number[]
 
@@ -5,19 +9,28 @@ abstract class Vector {
     this._e = e
   }
 
-  copy = () => {
+  toString () {
+    return `Vector ${[...this._e]}`
+  }
+
+  set (e: number[])  {
+    this._e = [...e]
+  }
+
+  copy () {
     const clone = Object.create(Object.getPrototypeOf(this))
     Object.assign(clone, this)
+    clone.set(this._e)
     return clone as this;
   }
 
-  newVector = (e: number[]) => {
+  newVector (e: number[]) {
     const clone = this.copy()
-    clone._e = e
+    clone.set(e)
     return clone
   }
 
-  binOp = (o: this | number, f: (a: number, b: number) => number) => {
+  binOp (o: this | number, f: (a: number, b: number) => number) {
     const e: number[] = []
     for (let i = 0; i < this._e.length; i++) {
       if (typeof o === "number") {
@@ -32,35 +45,35 @@ abstract class Vector {
     return this.newVector(e)
   }
 
-  add = (o: this | number) => {
+  add (o: this | number) {
     return this.binOp(o, (a, b) => a + b)
   }
   
-  sub = (o: this | number) => {
+  sub (o: this | number) {
     return this.binOp(o, (a, b) => a - b)
   }
 
-  mult = (o: this | number) => {
+  mult (o: this | number) {
     return this.binOp(o, (a, b) => a * b)
   }
 
-  div = (o: this | number) => {
+  div (o: this | number) {
     return this.binOp(o, (a, b) => a / b)
   }
 
-  magSq = () => {
+  magSq () {
     return this._e.map(el => el**2).reduce((a, b) => a + b, 0)
   }
 
-  mag = () => {
+  mag () {
     return this.magSq() ** (1/2)
   }
 
-  normalized = () => {
+  normalized () {
     return this.div(this.mag())
   }
 
-  dot = (vec: this) => {
+  dot (vec: this) {
     if (this._e.length !== vec._e.length) {
       throw Error("vector dimensions must be same")
     }
@@ -99,7 +112,7 @@ class Vector3 extends Vector {
     return this._e[2]
   }
 
-  cross = (vec: Vector3) => {
+  cross (vec: Vector3) {
     return new Vector3(
       this.y * vec.z - this.z * vec.y,
       this.z * vec.x - this.x * vec.z,

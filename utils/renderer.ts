@@ -32,33 +32,40 @@ class Renderer {
   }
 
   renderPixel = (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) => {
-    const pixelColor = new Vector3(0, 0, 0)
+    let pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      pixelColor.add(this.trace(ray, scene, max_depth))
+      const traced = this.trace(ray, scene, max_depth)
+      // console.log(`${pixelColor.toString()}と${traced.toString()}を足す直前`)
+      const added = pixelColor.add(traced)
+      // console.log(added.toString())
+      pixelColor = added
     }
     return pixelColor.div(nSamples)
   }
 
   trace = (ray: Ray, scene: Scene,  max_depth: number) => {
-    const rayColor = new Vector3(0, 0, 0)
-    const throughput = new Vector3(1, 1, 1)
+    // const test = new Vector3(1, 1, 1)
+    // // console.log(test.x, test.y, test.z)
+    // return test
+    let rayColor = new Vector3(0, 0, 0)
+    let throughput = new Vector3(1, 1, 1)
     let depth = 0
     while (depth < max_depth) {
       const rec = scene.hit(ray)
       if (rec.success) {
         if (rec.Le) {
-          rayColor.add(rec.Le.mult(throughput))
+          rayColor = rayColor.add(rec.Le.mult(throughput))
         }
         if (rec.deletePath) {
           break
         }
         let lnDot = rec.normal.dot(rec.l)
-        throughput.mult(rec.brdf).mult(lnDot).div(rec.pdf)
+        throughput = throughput.mult(rec.brdf).mult(lnDot).div(rec.pdf)
         ray = new Ray(rec.pos, rec.l)
       } else {
-        rayColor.add(scene.ambientColor.mult(throughput))
+        rayColor = rayColor.add(scene.ambientColor.mult(throughput))
         break
       }
       depth++

@@ -74,14 +74,13 @@ class Sphere {
       // t2だけが前にある場合
       t = t2
     }
-
     rec.success = true
     rec.t = t
     rec.pos = r.at(rec.t)
-    const normal = rec.pos.sub(this.center).normalized()
+    let normal = rec.pos.sub(this.center).normalized()
     const ndDot = normal.dot(r.direction)
     if (ndDot > 0) {
-      normal.mult(-1)
+      normal = normal.mult(-1)
     }
     rec.normal = normal
     let upVec = new Vector3(0, 1, 0)
@@ -91,8 +90,8 @@ class Sphere {
     rec.tangent = rec.normal.cross(upVec).normalized()
     rec.binormal = rec.tangent.cross(rec.normal).normalized()
     rec.uv = new Vector2(
-      Math.acos(rec.pos.z / this.radius),
-      Math.atan2(rec.pos.y, rec.pos.x)
+      Math.atan2(rec.pos.y, rec.pos.x),
+      Math.acos(rec.pos.z / this.radius)
     )
     const mRec = this.material.newSample(r, rec)
     rec.brdf = mRec.brdf
