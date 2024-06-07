@@ -90,8 +90,8 @@ class Sphere {
     rec.tangent = rec.normal.cross(upVec).normalized()
     rec.binormal = rec.tangent.cross(rec.normal).normalized()
     rec.uv = new Vector2(
-      Math.atan2(rec.pos.y, rec.pos.x),
-      Math.acos(rec.pos.z / this.radius)
+      Math.atan2(rec.pos.z, rec.pos.x),
+      Math.acos(rec.pos.y / this.radius)
     )
     const mRec = this.material.newSample(r, rec)
     rec.brdf = mRec.brdf
