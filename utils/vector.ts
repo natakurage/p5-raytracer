@@ -3,7 +3,7 @@ interface constructorCaller<T> {
 }
 
 abstract class Vector {
-  protected _e: number[]
+  protected _e: readonly number[]
 
   constructor(e: number[]) {
     this._e = e
@@ -13,20 +13,26 @@ abstract class Vector {
     return `Vector ${[...this._e]}`
   }
 
-  set (e: number[])  {
-    this._e = [...e]
+  set (e: number[], deep = true)  {
+    if (deep) {
+      this._e = [...e]
+    } else {
+      this._e = e
+    }
   }
 
-  copy () {
+  copy (replaceArray = true) {
     const clone = Object.create(Object.getPrototypeOf(this))
     Object.assign(clone, this)
-    clone.set(this._e)
+    if (replaceArray) {
+      clone.set(this._e)
+    }
     return clone as this;
   }
 
   newVector (e: number[]) {
-    const clone = this.copy()
-    clone.set(e)
+    const clone = this.copy(false)
+    clone.set(e, false)
     return clone
   }
 

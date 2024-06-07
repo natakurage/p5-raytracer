@@ -54,7 +54,7 @@ export const RayTracingCanvas = () => {
         new rt.vector.Vector3(0, -101, 0), 100, mat2)
     ], camera, ambColor)
 
-    renderer = new rt.renderer.Renderer(10)
+    renderer = new rt.renderer.Renderer(50)
   }
 
   const draw = (p5: p5Types) => {
