@@ -1,15 +1,15 @@
-import p5Types from 'p5'
+import { Vector3 } from './vector'
 
 class Ray {
-  origin: p5Types.Vector
-  direction: p5Types.Vector
-  constructor(origin: p5Types.Vector, direction: p5Types.Vector) {
+  origin: Vector3
+  direction: Vector3
+  constructor(origin: Vector3, direction: Vector3) {
     this.origin = origin
     this.direction = direction
   }
 
   at = (t: number) => {
-    return this.origin.copy().add(this.direction.copy().mult(t))
+    return this.origin.add(this.direction.mult(t))
   }
 }
 

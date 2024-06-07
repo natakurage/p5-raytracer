@@ -1,46 +1,44 @@
-import p5Types from 'p5'
+import { Vector2, Vector3 } from './vector'
 
 class Texture {
-  p5: p5Types
-  constructor(p5: p5Types) {
-    this.p5 = p5
+  constructor() {
   }
 
-  sample = (uv: p5Types.Vector) => {
+  sample = (uv: Vector2) => {
     throw new Error("not implemented")
-    return this.p5.createVector(0, 0, 0)
+    return new Vector3(0, 0, 0)
   }
 }
 
 class UniformColorTexture extends Texture {
-  color: p5Types.Vector
-  constructor(p5: p5Types, color: p5Types.Vector) {
-    super(p5)
+  color: Vector3
+  constructor(color: Vector3) {
+    super()
     this.color = color
   }
 
-  sample = (uv: p5Types.Vector) => {
-    return this.color.copy()
+  sample = (uv: Vector2) => {
+    return this.color
   }
 }
 
 class CheckerTexture extends Texture {
-  color1: p5Types.Vector
-  color2: p5Types.Vector
+  color1: Vector3
+  color2: Vector3
   scale: number
-  constructor(p5: p5Types, color1: p5Types.Vector, color2: p5Types.Vector, scale: number) {
-    super(p5)
+  constructor(color1: Vector3, color2: Vector3, scale: number) {
+    super()
     this.color1 = color1
     this.color2 = color2
     this.scale = scale
   }
 
-  sample = (uv: p5Types.Vector) => {
+  sample = (uv: Vector2) => {
     const mod = (n: number , d: number) => ((n % d) + d) % d
     if ((mod(this.scale * uv.x, 1) < 0.5) === (mod(this.scale * uv.y, 1) < 0.5)) {
-      return this.color1.copy()
+      return this.color1
     }
-    return this.color2.copy()
+    return this.color2
   }
 }
 

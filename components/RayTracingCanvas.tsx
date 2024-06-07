@@ -27,36 +27,35 @@ export const RayTracingCanvas = () => {
     p5.text("click to render", p5.width / 2, p5.height / 2)
 
     const camera = new rt.camera.Camera(
-      p5, p5.createVector(0, 0, 10),
-      p5.createVector(0, 0, -1).normalize(), 0.1
+      new rt.vector.Vector3(0, 0, 10),
+      new rt.vector.Vector3(0, 0, -1).normalized(), 0.1
     )
     const tex1 = new rt.texture.CheckerTexture(
-      p5,
-      p5.createVector(0.7, 0.5, 0.5),
-      p5.createVector(0.8, 0.8, 0.8),
+      new rt.vector.Vector3(0.7, 0.5, 0.5),
+      new rt.vector.Vector3(0.8, 0.8, 0.8),
       5
     )
     const tex2 = new rt.texture.UniformColorTexture(
-      p5, p5.createVector(0.5, 0.5, 0.5)
+      new rt.vector.Vector3(0.5, 0.5, 0.5)
     )
-    const mat1 = new rt.materials.DiffuseBRDF(p5, tex1)
+    const mat1 = new rt.materials.DiffuseBRDF(tex1)
     const mat2 = new rt.materials.DiffuseSpecularBRDF(
-      p5, tex2,  0.2
+      tex2,  0.2
     )
     const light = new rt.materials.SimpleEmitter(
-      p5, p5.createVector(1, 1, 1), 1
+      new rt.vector.Vector3(1, 1, 1), 1
     )
-    const ambColor = p5.createVector(0.5, 0.5, 0.5)
+    const ambColor = new rt.vector.Vector3(0.5, 0.5, 0.5)
     scene = new rt.scene.Scene([
       new rt.primitives.Sphere(
-        p5, p5.createVector(0.7, 0.7, 0.7), 0.1, light),
+        new rt.vector.Vector3(0.7, 0.7, 0.7), 0.1, light),
       new rt.primitives.Sphere(
-        p5, p5.createVector(0, 0, 0), 1, mat1),
+        new rt.vector.Vector3(0, 0, 0), 1, mat1),
       new rt.primitives.Sphere(
-        p5, p5.createVector(0, -101, 0), 100, mat2)
+        new rt.vector.Vector3(0, -101, 0), 100, mat2)
     ], camera, ambColor)
 
-    renderer = new rt.renderer.Renderer(50)
+    renderer = new rt.renderer.Renderer(1)
   }
 
   const draw = (p5: p5Types) => {

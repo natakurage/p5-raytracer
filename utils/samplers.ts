@@ -1,10 +1,6 @@
-import p5Types from 'p5'
-
 class Sampler {
-  p5: p5Types
   seed = 0
-  constructor(p5: p5Types, seed?: number) {
-    this.p5 = p5
+  constructor(seed?: number) {
     if (seed) { this.seed = seed }
   }
 
@@ -24,8 +20,8 @@ class Sampler {
 }
 
 class IndependentSampler extends Sampler{
-  constructor(p5: p5Types, seed?: number) {
-    super(p5, seed)
+  constructor(seed?: number) {
+    super(seed)
   }
 
   sample1D = () => {

@@ -1,6 +1,7 @@
 import p5Types from 'p5'
 import { Scene } from './scene'
 import { Ray } from './ray'
+import { Vector3 } from './vector'
 
 class Renderer {
   nSamples: number
@@ -31,33 +32,33 @@ class Renderer {
   }
 
   renderPixel = (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) => {
-    const pixelColor = p5.createVector(0, 0, 0)
+    const pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      pixelColor.add(this.trace(p5, ray, scene, max_depth))
+      pixelColor.add(this.trace(ray, scene, max_depth))
     }
     return pixelColor.div(nSamples)
   }
 
-  trace = (p5: p5Types, ray: Ray, scene: Scene,  max_depth: number) => {
-    const rayColor = p5.createVector(0, 0, 0)
-    const throughput = p5.createVector(1, 1, 1)
+  trace = (ray: Ray, scene: Scene,  max_depth: number) => {
+    const rayColor = new Vector3(0, 0, 0)
+    const throughput = new Vector3(1, 1, 1)
     let depth = 0
     while (depth < max_depth) {
       const rec = scene.hit(ray)
       if (rec.success) {
         if (rec.Le) {
-          rayColor.add(rec.Le.copy().mult(throughput))
+          rayColor.add(rec.Le.mult(throughput))
         }
         if (rec.deletePath) {
           break
         }
-        let lnDot = p5Types.Vector.dot(rec.normal, rec.l)
+        let lnDot = rec.normal.dot(rec.l)
         throughput.mult(rec.brdf).mult(lnDot).div(rec.pdf)
         ray = new Ray(rec.pos, rec.l)
       } else {
-        rayColor.add(scene.ambientColor.copy().mult(throughput))
+        rayColor.add(scene.ambientColor.mult(throughput))
         break
       }
       depth++

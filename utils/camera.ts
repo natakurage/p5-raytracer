@@ -1,25 +1,23 @@
-import p5Types from 'p5'
 import { Ray } from './ray'
+import { Vector3 } from './vector'
 
 class Camera {
-  p5: p5Types
-  pos: p5Types.Vector
-  forward: p5Types.Vector
-  right: p5Types.Vector
-  up: p5Types.Vector
+  pos: Vector3
+  forward: Vector3
+  right: Vector3
+  up: Vector3
   focalLength: number
   sensorSize: number
   
   constructor(
-    p5: p5Types, pos: p5Types.Vector, forward: p5Types.Vector,
+    pos: Vector3, forward: Vector3,
     focalLength: number,
-    globalUp? : p5Types.Vector, sensorSize = 0.036) {
-    globalUp = globalUp ?? p5.createVector(0, 1, 0)
-    this.p5 = p5
+    globalUp? : Vector3, sensorSize = 0.036) {
+    globalUp = globalUp ?? new Vector3(0, 1, 0)
     this.pos = pos
-    this.forward = forward.normalize()
-    this.right = this.forward.copy().cross(globalUp).normalize()
-    this.up = this.right.copy().cross(this.forward).normalize()
+    this.forward = forward.normalized()
+    this.right = this.forward.cross(globalUp).normalized()
+    this.up = this.right.cross(this.forward).normalized()
     this.focalLength = focalLength
     this.sensorSize = sensorSize
   }
@@ -38,18 +36,18 @@ class Camera {
     const dy = sensorY / height
     const nx = j * dx
     const ny = i * dy
-    const screenCenter = this.forward.copy().mult(this.focalLength).add(this.pos)
-    const screenOrigin = screenCenter.copy().sub(
-      this.right.copy().mult(0.5 * sensorX)
-    ).add(this.up.copy().mult(0.5 * sensorY))
-    const pixelOrigin = screenOrigin.copy().add(
-      this.right.copy().mult(nx)).sub(this.up.copy().mult(ny))
-    const randX = this.p5.random()
-    const randY = this.p5.random()
-    const sampleNoise = this.right.copy().mult(dx * randX).sub(
-      this.up.copy().mult(dy * randY)
+    const screenCenter = this.forward.mult(this.focalLength).add(this.pos)
+    const screenOrigin = screenCenter.sub(
+      this.right.mult(0.5 * sensorX)
+    ).add(this.up.mult(0.5 * sensorY))
+    const pixelOrigin = screenOrigin.add(
+      this.right.mult(nx)).sub(this.up.mult(ny))
+    const randX = Math.random()
+    const randY = Math.random()
+    const sampleNoise = this.right.mult(dx * randX).sub(
+      this.up.mult(dy * randY)
     )    
-    return new Ray(this.pos, pixelOrigin.copy().add(sampleNoise).sub(this.pos))
+    return new Ray(this.pos, pixelOrigin.add(sampleNoise).sub(this.pos))
   }
 
 }

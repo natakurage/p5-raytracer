@@ -1,4 +1,3 @@
-import p5Types from "p5"
 import * as ray from "./ray"
 import { randomOnUnitSphere } from "./utils"
 import {
@@ -8,42 +7,41 @@ import {
   DiffuseSpecularBRDF
 } from "./materials"
 import { CheckerTexture, UniformColorTexture } from "./textures"
+import { Vector2, Vector3 } from "./vector"
 
 class HitRecord {
   success!: boolean
   t!: number
-  pos!: p5Types.Vector
-  uv!: p5Types.Vector
-  normal!: p5Types.Vector
-  tangent!: p5Types.Vector
-  binormal!: p5Types.Vector
-  brdf!: p5Types.Vector
+  pos!: Vector3
+  uv!: Vector2
+  normal!: Vector3
+  tangent!: Vector3
+  binormal!: Vector3
+  brdf!: Vector3
   pdf!: number
-  l!: p5Types.Vector
+  l!: Vector3
   deletePath = false
-  Le!: p5Types.Vector
+  Le!: Vector3
 }
 
 class Sphere {
-  p5: p5Types
-  center: p5Types.Vector
+  center: Vector3
   radius: number
   material: Material
-  constructor(p5: p5Types, center: p5Types.Vector, radius: number, material?: Material) {
-    this.p5 = p5
+  constructor(center: Vector3, radius: number, material?: Material) {
     this.center = center
     this.radius = radius
     this.material = material ?? 
-      // new NormalDiffuseBRDF(p5)
-      // new NormalMetalBRDF(p5)
-      // new DiffuseBRDF(p5, p5.createVector(0.8, 0.1, 0.1))
-      // new MetalBRDF(p5, p5.createVector(1, 1, 1))
-      // new MicrofacetSpecularBRDF(p5, p5.createVector(0.5, 0.5, 0.5), 0.1)
-      new DiffuseSpecularBRDF(p5,
+      // new NormalDiffuseBRDF(Math)
+      // new NormalMetalBRDF(Math)
+      // new DiffuseBRDF(Math, new Vector3(0.8, 0.1, 0.1))
+      // new MetalBRDF(Math, new Vector3(1, 1, 1))
+      // new MicrofacetSpecularBRDF(Math, new Vector3(0.5, 0.5, 0.5), 0.1)
+      new DiffuseSpecularBRDF(
         new CheckerTexture(
-          p5, p5.createVector(0.8, 0.1, 0.1),
-          p5.createVector(0.1, 0.1, 0.1),2
-        ),
+        new Vector3(0.8, 0.1, 0.1),
+        new Vector3(0.1, 0.1, 0.1),2
+      ),
       0.5)
   }
   
@@ -53,8 +51,8 @@ class Sphere {
     const rec = new HitRecord()
 
     const a = r.direction.magSq()
-    const b = 2 * p5Types.Vector.dot(p5Types.Vector.sub(r.origin, this.center), r.direction)
-    const c = p5Types.Vector.sub(r.origin, this.center).magSq() - this.radius ** 2
+    const b = 2 * r.origin.sub(this.center).dot(r.direction)
+    const c = r.origin.sub(this.center).magSq() - this.radius ** 2
     const D = b ** 2 - 4 * a * c
     if (D < 0) {
       rec.success = false
@@ -80,23 +78,23 @@ class Sphere {
     rec.success = true
     rec.t = t
     rec.pos = r.at(rec.t)
-    const normal = p5Types.Vector.sub(rec.pos, this.center).normalize()
-    const ndDot = p5Types.Vector.dot(normal, r.direction)
+    const normal = rec.pos.sub(this.center).normalized()
+    const ndDot = normal.dot(r.direction)
     if (ndDot > 0) {
       normal.mult(-1)
     }
     rec.normal = normal
-    let upVec = this.p5.createVector(0, 1, 0)
-    if (1 - Math.abs(p5Types.Vector.dot(normal, upVec)) < 1e-6) {
-      upVec = this.p5.createVector(0, 0, 1)
+    let upVec = new Vector3(0, 1, 0)
+    if (1 - Math.abs(normal.dot(upVec)) < 1e-6) {
+      upVec = new Vector3(0, 0, 1)
     }
-    rec.tangent = rec.normal.copy().cross(upVec).normalize()
-    rec.binormal = rec.tangent.copy().cross(rec.normal).normalize()
-    const mRec = this.material.newSample(r, rec)
-    rec.uv = this.p5.createVector(
-      this.p5.acos(rec.pos.z / this.radius),
-      this.p5.atan2(rec.pos.y, rec.pos.x)
+    rec.tangent = rec.normal.cross(upVec).normalized()
+    rec.binormal = rec.tangent.cross(rec.normal).normalized()
+    rec.uv = new Vector2(
+      Math.acos(rec.pos.z / this.radius),
+      Math.atan2(rec.pos.y, rec.pos.x)
     )
+    const mRec = this.material.newSample(r, rec)
     rec.brdf = mRec.brdf
     rec.pdf = mRec.pdf
     rec.l = mRec.l

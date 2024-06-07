@@ -60,10 +60,6 @@ abstract class Vector {
     return this.div(this.mag())
   }
 
-  test = (e: number[]) => {
-    return this.constructor(e) as this
-  }
-
   dot = (vec: this) => {
     if (this._e.length !== vec._e.length) {
       throw Error("vector dimensions must be same")
