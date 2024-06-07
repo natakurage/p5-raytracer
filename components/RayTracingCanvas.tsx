@@ -17,6 +17,9 @@ export const RayTracingCanvas = () => {
   }
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
+    const test1 = new rt.vector.Vector3(1, 2, 3)
+    const test2 = new rt.vector.Vector3(4, 5, 6)
+
     const xSize = 500
     const ySize = 500
     p5.createCanvas(xSize, ySize).parent(canvasParentRef)

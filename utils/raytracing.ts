@@ -6,7 +6,8 @@ import * as renderer from './renderer'
 import * as texture from "./textures"
 import * as camera from "./camera"
 import * as materials from "./materials"
+import * as vector from "./vector"
 
 export {
-  primitives, ray, utils, scene, renderer, texture, camera, materials
+  primitives, ray, utils, scene, renderer, texture, camera, materials, vector
 }
