@@ -19,4 +19,6 @@ const randomOnHemiSphere = (normal: Vector3) => {
   return vec
 }
 
-export { randomOnUnitSphere, randomOnHemiSphere }
+const saturate = (v: number) => Math.min(Math.max(v, 0), 1)
+
+export { randomOnUnitSphere, randomOnHemiSphere, saturate }

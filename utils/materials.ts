@@ -1,5 +1,5 @@
 import { Ray } from "./ray"
-import { randomOnHemiSphere, randomOnUnitSphere } from "./utils"
+import { randomOnHemiSphere, randomOnUnitSphere, saturate } from "./utils"
 import { HitRecord } from "./primitives"
 import { Texture } from "./textures"
 import { Vector3 } from "./vector"
@@ -11,8 +11,6 @@ class MaterialSampleRecord {
   fresnel!: Vector3 | null
   Le!: Vector3
 }
-
-const saturate = (v: number) => Math.min(Math.max(v, 0), 1)
 
 const reflect = (vec: Vector3, normal: Vector3) => {
   return normal.mult(2 * normal.dot(vec)).sub(vec)

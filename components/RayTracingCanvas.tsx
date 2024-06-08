@@ -16,6 +16,7 @@ export const RayTracingCanvas = () => {
   let renderBtnShown = true
   let totalSteps = 0
   let rendering = false
+  let linearPixels: rt.vector.Vector3[] = []
 
   const preload = (p5: p5Types) => {
   }
@@ -37,7 +38,7 @@ export const RayTracingCanvas = () => {
 
   const draw = (p5: p5Types) => {
     if (rendering) {
-      renderer.renderProgressive(p5, scene, 1, totalSteps)
+      linearPixels = renderer.renderProgressive(p5, linearPixels, scene, 1, totalSteps)
       totalSteps++
     }
   }

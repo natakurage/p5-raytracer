@@ -2,16 +2,26 @@ import p5Types from 'p5'
 import { Scene } from './scene'
 import { Ray } from './ray'
 import { Vector3 } from './vector'
+import { saturate } from './utils'
 
 class Renderer {
   nSamples: number
+  gamma = 2.2
   
   constructor(nSamples: number) {
     this.nSamples = nSamples
   }
 
-  readPixel(pixels: number[], i: number, j: number, width: number) {
-    return pixels.slice((i * width + j) * 4, (i * width + j) * 4 + 4)
+  toP5Color(color: Vector3) {
+    const r = saturate(Math.pow(color.x, this.gamma))
+    const g = saturate(Math.pow(color.y, this.gamma))
+    const b = saturate(Math.pow(color.z, this.gamma))
+    return [
+      255 * r,
+      255 * g,
+      255 * b,
+      255
+    ]
   }
 
   render (p5: p5Types, scene: Scene, nSamples?: number) {
@@ -22,10 +32,7 @@ class Renderer {
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
         const pixelColor = this.renderPixel(p5, i, j, nSamples, scene)
-        p5.set(j, i, p5.color(
-          255 * pixelColor.x,
-          255 * pixelColor.y,
-          255 * pixelColor.z))
+        p5.set(j, i, this.toP5Color(pixelColor))
       }
       if (i !== 0 && i % 50 === 0) {
         console.log(`rendered ${i}th scan line...`)
@@ -35,22 +42,25 @@ class Renderer {
     console.log("render finished!")
   }
 
-  renderProgressive(p5: p5Types, scene: Scene, steps: number, totalSteps: number) {
-    const currentPixels = p5.get()
-    currentPixels.loadPixels()
+  renderProgressive(p5: p5Types, linearPixels: Vector3[], scene: Scene, steps: number, totalSteps: number) {
+    if (linearPixels.length === 0) {
+      for (let i = 0; i < p5.width * p5.height; i++) {
+        linearPixels.push(new Vector3(0, 0, 0))
+      }
+    }
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
         const pixelColor = this.renderPixel(p5, i, j, steps, scene)
-        const currentColor = this.readPixel(currentPixels.pixels, i, j, p5.width)
-        p5.set(j, i, p5.color(
-          (currentColor[0] * totalSteps + 255 * pixelColor.x * steps) / (totalSteps + steps),
-          (currentColor[1] * totalSteps + 255 * pixelColor.y * steps) / (totalSteps + steps),
-          (currentColor[2] * totalSteps + 255 * pixelColor.z * steps) / (totalSteps + steps),
-        ))
+        const currentColor = linearPixels[i * p5.width + j]
+        const nextColor = currentColor.mult(totalSteps).add(
+          pixelColor.mult(steps)).div(totalSteps + steps)
+        linearPixels[i * p5.width + j] = nextColor
+        p5.set(j, i, this.toP5Color(nextColor))
       }
     }
     p5.updatePixels()
     console.log(totalSteps + 1 + "th step rendered")
+    return linearPixels
   }
 
   renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) {
