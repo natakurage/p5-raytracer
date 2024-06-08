@@ -12,18 +12,20 @@ export const RayTracingCanvas = () => {
 
   let scene: rt.scene.Scene
   let renderer: rt.renderer.Renderer
+  let renderBtn: p5Types.Element
+  let renderBtnShown = true
 
   const preload = (p5: p5Types) => {
   }
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
-
+    renderBtn = p5.createButton("Click to render").position(10, 10)
+    renderBtn.mouseClicked(() => renderer.render(p5, scene))
 
     const xSize = 500
     const ySize = 500
     p5.createCanvas(xSize, ySize).parent(canvasParentRef)
     p5.fill("gray")
-    p5.text("click to render", p5.width / 2, p5.height / 2)
 
     const camera = new rt.camera.Camera(
       new rt.vector.Vector3(0, 0, 10),
@@ -58,7 +60,7 @@ export const RayTracingCanvas = () => {
   }
 
   const draw = (p5: p5Types) => {
-    
+
   }
 
   // const windowResized = (p5: p5Types) => {
@@ -66,7 +68,12 @@ export const RayTracingCanvas = () => {
   // }
 
   const mouseClicked = (p5: p5Types) => {
-    renderer.render(p5, scene)
+    if (renderBtnShown) {
+      renderBtn.hide()
+    } else {
+      renderBtn.show()
+    }
+    renderBtnShown = !renderBtnShown
   }
 
   return (
