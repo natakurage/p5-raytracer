@@ -67,8 +67,17 @@ const defaultScene = () => {
 
 const cornellScene = () => {
   const camera = new Camera(
-    new Vector3(0, 0, -10),
-    new Vector3(0, 0, 1).normalized(), 0.1
+    new Vector3(0, 1, 8),
+    new Vector3(0, 0, -1).normalized(), 0.1
+  )
+  const redTex = new UniformColorTexture(
+    new Vector3(0.8, 0.1, 0.1)
+  )
+  const greenTex = new UniformColorTexture(
+    new Vector3(0.1, 0.8, 0.1)
+  )
+  const whiteTex = new UniformColorTexture(
+    new Vector3(0.8, 0.8, 0.8)
   )
   const tex1 = new CheckerTexture(
     new Vector3(0.7, 0.5, 0.5),
@@ -78,18 +87,48 @@ const cornellScene = () => {
   const tex2 = new UniformColorTexture(
     new Vector3(0.5, 0.5, 0.5)
   )
+  const leftMat = new DiffuseBRDF(redTex)
+  const rightMat = new DiffuseBRDF(greenTex)
+  const wallMat = new DiffuseBRDF(whiteTex)
+  const lightMat = new SimpleEmitter(new Vector3(1, 1, 1), 100)
   const mat1 = new DiffuseBRDF(tex1)
-  const mat2 = new DiffuseSpecularBRDF(
-    tex2,  0.01
-  )
-  const ambColor = new Vector3(0.5, 0.5, 0.5)
+  const mat2 = new DiffuseSpecularBRDF(tex2, 0.01)
+  const ambColor = new Vector3(0.0, 0.0, 0.0)
   return new Scene([
     new Quad(
-      new Vector3(0, 0, 0),
-      new Vector3(1, 0.2, 0),
-      new Vector3(0.2, 1, 0), mat1),
+      new Vector3(-1, 0, 1),
+      new Vector3(0, 0, -2),
+      new Vector3(0, 2, 0), leftMat
+    ),
+    new Quad(
+      new Vector3(1, 0, 1),
+      new Vector3(0, 0, -2),
+      new Vector3(0, 2, 0), rightMat
+    ),
+    new Quad(
+      new Vector3(-1, 0, 1),
+      new Vector3(2, 0, 0),
+      new Vector3(0, 0, -2), wallMat
+    ),
+    new Quad(
+      new Vector3(-1, 0, -1),
+      new Vector3(2, 0, 0),
+      new Vector3(0, 2, 0), wallMat
+    ),
+    new Quad(
+      new Vector3(-1, 2, 1),
+      new Vector3(2, 0, 0),
+      new Vector3(0, 0, -2), wallMat
+    ),
+    new Quad(
+      new Vector3(-0.2, 1.95, 0.2),
+      new Vector3(0.2, 0, 0),
+      new Vector3(0, 0, -0.2), lightMat
+    ),
     new Sphere(
-      new Vector3(0, -101, 0), 100, mat2)
+      new Vector3(-0.5, 0.3, 0), 0.3, mat1),
+    new Sphere(
+      new Vector3(0.6, 0.2, -0.3), 0.2, mat2)
   ], camera, ambColor)
 } 
 
