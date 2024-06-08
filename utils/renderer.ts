@@ -31,6 +31,22 @@ class Renderer {
     console.log("render finished!")
   }
 
+  renderProgressive(p5: p5Types, scene: Scene, steps: number, totalSteps: number) {
+    for (let i = 0; i < p5.height; i++) {
+      for (let j = 0; j < p5.width; j++) {
+        const pixelColor = this.renderPixel(p5, i, j, steps, scene)
+        const currentColor = p5.get(j, i)
+        p5.set(j, i, p5.color(
+          (currentColor[0] * totalSteps + 255 * pixelColor.x * steps) / (totalSteps + steps),
+          (currentColor[1] * totalSteps + 255 * pixelColor.y * steps) / (totalSteps + steps),
+          (currentColor[2] * totalSteps + 255 * pixelColor.z * steps) / (totalSteps + steps),
+        ))
+      }
+    }
+    p5.updatePixels()
+    console.log(totalSteps + 1 + "th step rendered")
+  }
+
   renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) {
     let pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
