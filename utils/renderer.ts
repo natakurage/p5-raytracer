@@ -10,6 +10,10 @@ class Renderer {
     this.nSamples = nSamples
   }
 
+  readPixel(pixels: number[], i: number, j: number, width: number) {
+    return pixels.slice((i * width + j) * 4, (i * width + j) * 4 + 4)
+  }
+
   render (p5: p5Types, scene: Scene, nSamples?: number) {
     nSamples = nSamples ?? this.nSamples
 
@@ -32,10 +36,12 @@ class Renderer {
   }
 
   renderProgressive(p5: p5Types, scene: Scene, steps: number, totalSteps: number) {
+    const currentPixels = p5.get()
+    currentPixels.loadPixels()
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
         const pixelColor = this.renderPixel(p5, i, j, steps, scene)
-        const currentColor = p5.get(j, i)
+        const currentColor = this.readPixel(currentPixels.pixels, i, j, p5.width)
         p5.set(j, i, p5.color(
           (currentColor[0] * totalSteps + 255 * pixelColor.x * steps) / (totalSteps + steps),
           (currentColor[1] * totalSteps + 255 * pixelColor.y * steps) / (totalSteps + steps),
