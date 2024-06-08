@@ -1,7 +1,3 @@
-interface constructorCaller<T> {
-  
-}
-
 abstract class Vector {
   protected _e: readonly number[]
 

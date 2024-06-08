@@ -1,14 +1,16 @@
-import { HitRecord, Sphere } from './primitives';
+import { HitRecord, Quad, Shape, Sphere } from './primitives';
 import { Ray } from './ray';
 import { Camera } from './camera';
 import { Vector3 } from './vector';
+import { CheckerTexture, UniformColorTexture } from './textures';
+import { DiffuseBRDF, DiffuseSpecularBRDF, SimpleEmitter } from './materials';
 
 class Scene {
-  objects: Array<Sphere>
+  objects: Array<Shape>
   camera: Camera
   ambientColor: Vector3
   
-  constructor(objects: Array<Sphere>, camera: Camera, ambientColor: Vector3) {
+  constructor(objects: Array<Shape>, camera: Camera, ambientColor: Vector3) {
     this.objects = objects
     this.camera = camera
     this.ambientColor = ambientColor
@@ -32,4 +34,65 @@ class Scene {
   }
 }
 
-export { Scene }
+const defaultScene = () => {
+  const camera = new Camera(
+    new Vector3(0, 0, 10),
+    new Vector3(0, 0, -1).normalized(), 0.1
+  )
+  const tex1 = new CheckerTexture(
+    new Vector3(0.7, 0.5, 0.5),
+    new Vector3(0.8, 0.8, 0.8),
+    5
+  )
+  const tex2 = new UniformColorTexture(
+    new Vector3(0.5, 0.5, 0.5)
+  )
+  const mat1 = new DiffuseBRDF(tex1)
+  const mat2 = new DiffuseSpecularBRDF(
+    tex2,  0.01
+  )
+  const light = new SimpleEmitter(
+    new Vector3(1, 1, 1), 1
+  )
+  const ambColor = new Vector3(0.5, 0.5, 0.5)
+  return new Scene([
+    // new Sphere(
+    //   new Vector3(0.7, 0.7, 0.7), 0.1, light),
+    new Sphere(
+      new Vector3(0, 0, 0), 1, mat1),
+    new Sphere(
+      new Vector3(0, -101, 0), 100, mat2)
+  ], camera, ambColor)
+} 
+
+const cornellScene = () => {
+  const camera = new Camera(
+    new Vector3(0, 0, -10),
+    new Vector3(0, 0, 1).normalized(), 0.1
+  )
+  const tex1 = new CheckerTexture(
+    new Vector3(0.7, 0.5, 0.5),
+    new Vector3(0.8, 0.8, 0.8),
+    5
+  )
+  const tex2 = new UniformColorTexture(
+    new Vector3(0.5, 0.5, 0.5)
+  )
+  const mat1 = new DiffuseBRDF(tex1)
+  const mat2 = new DiffuseSpecularBRDF(
+    tex2,  0.01
+  )
+  const ambColor = new Vector3(0.5, 0.5, 0.5)
+  return new Scene([
+    new Quad(
+      new Vector3(0, 0, 0),
+      new Vector3(1, 0.2, 0),
+      new Vector3(0.2, 1, 0), mat1),
+    new Sphere(
+      new Vector3(0, -101, 0), 100, mat2)
+  ], camera, ambColor)
+} 
+
+const exampleScenes = { defaultScene, cornellScene}
+
+export { Scene, exampleScenes }

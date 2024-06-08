@@ -30,34 +30,7 @@ export const RayTracingCanvas = () => {
     const ySize = 500
     p5.createCanvas(xSize, ySize).parent(canvasParentRef)
 
-    const camera = new rt.camera.Camera(
-      new rt.vector.Vector3(0, 0, 10),
-      new rt.vector.Vector3(0, 0, -1).normalized(), 0.1
-    )
-    const tex1 = new rt.texture.CheckerTexture(
-      new rt.vector.Vector3(0.7, 0.5, 0.5),
-      new rt.vector.Vector3(0.8, 0.8, 0.8),
-      5
-    )
-    const tex2 = new rt.texture.UniformColorTexture(
-      new rt.vector.Vector3(0.5, 0.5, 0.5)
-    )
-    const mat1 = new rt.materials.DiffuseBRDF(tex1)
-    const mat2 = new rt.materials.DiffuseSpecularBRDF(
-      tex2,  0.2
-    )
-    const light = new rt.materials.SimpleEmitter(
-      new rt.vector.Vector3(1, 1, 1), 1
-    )
-    const ambColor = new rt.vector.Vector3(0.5, 0.5, 0.5)
-    scene = new rt.scene.Scene([
-      new rt.primitives.Sphere(
-        new rt.vector.Vector3(0.7, 0.7, 0.7), 0.1, light),
-      new rt.primitives.Sphere(
-        new rt.vector.Vector3(0, 0, 0), 1, mat1),
-      new rt.primitives.Sphere(
-        new rt.vector.Vector3(0, -101, 0), 100, mat2)
-    ], camera, ambColor)
+    scene = rt.scene.exampleScenes.cornellScene()
 
     renderer = new rt.renderer.Renderer(50)
   }

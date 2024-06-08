@@ -4,7 +4,8 @@ import {
   MaterialSampleRecord, Material, DiffuseBRDF,
   MetalBRDF, MicrofacetSpecularBRDF, NormalDiffuseBRDF,
   NormalMetalBRDF,
-  DiffuseSpecularBRDF
+  DiffuseSpecularBRDF,
+  SimpleEmitter
 } from "./materials"
 import { CheckerTexture, UniformColorTexture } from "./textures"
 import { Vector2, Vector3 } from "./vector"
@@ -24,25 +25,26 @@ class HitRecord {
   Le!: Vector3
 }
 
-class Sphere {
+abstract class Shape {
+  material: Material
+  constructor(material?: Material) {
+    this.material = material ?? new SimpleEmitter(new Vector3(1, 1, 0), 1)
+  }
+
+  hit (r: ray.Ray) {
+    const rec = new HitRecord()
+    rec.success = false
+    return rec
+  }
+}
+
+class Sphere extends Shape{
   center: Vector3
   radius: number
-  material: Material
   constructor(center: Vector3, radius: number, material?: Material) {
+    super(material)
     this.center = center
     this.radius = radius
-    this.material = material ?? 
-      // new NormalDiffuseBRDF(Math)
-      // new NormalMetalBRDF(Math)
-      // new DiffuseBRDF(Math, new Vector3(0.8, 0.1, 0.1))
-      // new MetalBRDF(Math, new Vector3(1, 1, 1))
-      // new MicrofacetSpecularBRDF(Math, new Vector3(0.5, 0.5, 0.5), 0.1)
-      new DiffuseSpecularBRDF(
-        new CheckerTexture(
-        new Vector3(0.8, 0.1, 0.1),
-        new Vector3(0.1, 0.1, 0.1),2
-      ),
-      0.5)
   }
   
   hit (r: ray.Ray) {
@@ -100,7 +102,62 @@ class Sphere {
     rec.Le = mRec.Le
     return rec
   }
-
 }
 
-export { HitRecord, Sphere }
+class Quad extends Shape {
+  origin: Vector3
+  u: Vector3
+  v: Vector3
+  normal: Vector3
+  constructor(origin: Vector3, u: Vector3, v: Vector3, material?: Material) {
+    super(material)
+    this.origin = origin
+    this.u = u
+    this.v = v
+    this.normal = u.cross(v)
+  }
+  
+  hit (r: ray.Ray) {
+    const eps = 0.001
+
+    const rec = new HitRecord()
+
+    const t = (this.normal.dot(this.origin) - this.normal.dot(r.origin)) / this.normal.dot(r.direction)
+    // 後ろにある場合
+    if (t < eps) {
+      rec.success = false
+      return rec
+    }
+    const pos = r.at(t)
+    // 外側にある場合
+    const dp = pos.sub(this.origin)
+    const dpou = dp.dot(this.u.normalized())
+    const dpov = dp.dot(this.v.normalized())
+    if (dpou < 0 || this.u.mag() < dpou || dpov < 0 || this.v.mag() < dpov) {
+      rec.success = false
+      return rec
+    }
+
+    rec.success = true
+    rec.t = t
+    rec.pos = pos
+    let normal = this.normal
+    const ndDot = normal.dot(r.direction)
+    if (ndDot > 0) {
+      normal = normal.mult(-1)
+    }
+    rec.normal = normal
+    rec.tangent = this.u.normalized()
+    rec.binormal = rec.tangent.cross(rec.normal).normalized()
+    rec.uv = new Vector2(dpou, dpov)
+    const mRec = this.material.newSample(r, rec)
+    rec.brdf = mRec.brdf
+    rec.pdf = mRec.pdf
+    rec.l = mRec.l
+    rec.Le = mRec.Le
+    return rec
+  }
+}
+
+
+export { HitRecord, Shape, Sphere, Quad }
