@@ -85,17 +85,18 @@ class Renderer {
     let throughput = new Vector3(1, 1, 1)
     let depth = 0
     while (depth < max_depth) {
-      const rec = scene.hit(ray)
-      if (rec.success) {
-        if (rec.Le) {
-          rayColor = rayColor.add(rec.Le.mult(throughput))
+      const hRec = scene.hit(ray)
+      if (hRec.success) {
+        const mRec = hRec.material.newSample(ray, hRec)
+        if (mRec.Le) {
+          rayColor = rayColor.add(mRec.Le.mult(throughput))
         }
-        if (rec.deletePath) {
+        if (hRec.deletePath) {
           break
         }
-        let lnDot = rec.normal.dot(rec.l)
-        throughput = throughput.mult(rec.brdf).mult(lnDot).div(rec.pdf)
-        ray = new Ray(rec.pos, rec.l)
+        let lnDot = hRec.normal.dot(mRec.l)
+        throughput = throughput.mult(mRec.brdf).mult(lnDot).div(mRec.pdf)
+        ray = new Ray(hRec.pos, mRec.l)
       } else {
         rayColor = rayColor.add(scene.ambientColor.mult(throughput))
         break

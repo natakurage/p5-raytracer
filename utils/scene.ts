@@ -121,9 +121,9 @@ const cornellScene = () => {
       new Vector3(0, 0, -2), wallMat
     ),
     new Quad(
-      new Vector3(-0.2, 1.95, 0.2),
-      new Vector3(0.2, 0, 0),
-      new Vector3(0, 0, -0.2), lightMat
+      new Vector3(-0.3, 1.99, 0.3),
+      new Vector3(0.6, 0, 0),
+      new Vector3(0, 0, -0.6), lightMat
     ),
     new Sphere(
       new Vector3(-0.5, 0.3, 0), 0.3, mat1),

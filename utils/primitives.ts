@@ -18,11 +18,8 @@ class HitRecord {
   normal!: Vector3
   tangent!: Vector3
   binormal!: Vector3
-  brdf!: Vector3
-  pdf!: number
-  l!: Vector3
+  material!: Material
   deletePath = false
-  Le!: Vector3
 }
 
 abstract class Shape {
@@ -95,11 +92,7 @@ class Sphere extends Shape{
       Math.atan2(rec.pos.z, rec.pos.x),
       Math.acos(rec.pos.y / this.radius)
     )
-    const mRec = this.material.newSample(r, rec)
-    rec.brdf = mRec.brdf
-    rec.pdf = mRec.pdf
-    rec.l = mRec.l
-    rec.Le = mRec.Le
+    rec.material = this.material
     return rec
   }
 }
@@ -150,11 +143,7 @@ class Quad extends Shape {
     rec.tangent = this.u.normalized()
     rec.binormal = rec.tangent.cross(rec.normal).normalized()
     rec.uv = new Vector2(dpou, dpov)
-    const mRec = this.material.newSample(r, rec)
-    rec.brdf = mRec.brdf
-    rec.pdf = mRec.pdf
-    rec.l = mRec.l
-    rec.Le = mRec.Le
+    rec.material = this.material
     return rec
   }
 }
