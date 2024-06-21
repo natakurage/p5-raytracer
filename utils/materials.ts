@@ -179,15 +179,11 @@ class MicrofacetSpecularBRDF extends Material {
 class DiffuseSpecularBRDF extends Material {
   diffuseBRDF: DiffuseBRDF
   specularBRDF: MicrofacetSpecularBRDF
-  baseColor: Texture
-  roughness: number
 
   constructor(baseColor: Texture, roughness: number) {
     super()
-    this.baseColor = baseColor
-    this.roughness = roughness ** 2
     this.diffuseBRDF = new DiffuseBRDF(baseColor)
-    this.specularBRDF = new MicrofacetSpecularBRDF(baseColor, roughness ** 2)
+    this.specularBRDF = new MicrofacetSpecularBRDF(baseColor, roughness)
   }
 
   newSample (r: Ray, hRec: HitRecord) {
