@@ -68,7 +68,7 @@ class Renderer {
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      const traced = this.trace(ray, scene, max_depth)
+      const traced = this.traceNEE(ray, scene, max_depth)
       // console.log(`${pixelColor.toString()}と${traced.toString()}を足す直前`)
       const added = pixelColor.add(traced)
       // console.log(added.toString())
@@ -93,6 +93,51 @@ class Renderer {
         }
         if (hRec.deletePath) {
           break
+        }
+        let lnDot = hRec.normal.dot(mRec.l)
+        throughput = throughput.mult(mRec.brdf).mult(lnDot).div(mRec.pdf)
+        ray = new Ray(hRec.pos, mRec.l)
+      } else {
+        rayColor = rayColor.add(scene.ambientColor.mult(throughput))
+        break
+      }
+      depth++
+    }
+    return rayColor
+  }
+
+  traceNEE (ray: Ray, scene: Scene,  max_depth: number) {
+    // const test = new Vector3(1, 1, 1)
+    // // console.log(test.x, test.y, test.z)
+    // return test
+    let rayColor = new Vector3(0, 0, 0)
+    let throughput = new Vector3(1, 1, 1)
+    let depth = 0
+    while (depth < max_depth) {
+      const hRec = scene.hit(ray)
+      if (hRec.success) {
+        const mRec = hRec.material.newSample(ray, hRec)
+        if (mRec.Le) {
+          rayColor = rayColor.add(mRec.Le.mult(throughput))
+        }
+        if (hRec.deletePath) {
+          break
+        }
+        /* sample emitter */
+        if (scene.hasEmitter()) {
+          const emitter = scene.selectEmitter()
+          const ERec = emitter.randomSample()
+          const shadowRay = new Ray(hRec.pos, ERec.pos.sub(hRec.pos).normalized())
+          const distance = ERec.pos.sub(hRec.pos).mag()
+          const shadowRec = scene.hit(shadowRay, distance - 0.001)
+          if (!shadowRec.success) {
+            const cos1 = hRec.normal.dot(shadowRay.direction)
+            const cos2 = Math.abs(ERec.normal.dot(shadowRay.direction.mult(-1)))
+            const G = cos1 * cos2 / distance ** 2
+            const pdf = 1 / scene.sumSurfaceArea
+            const value = mRec.brdf.mult(ERec.Le).mult(G / pdf)
+            rayColor = rayColor.add(value.mult(throughput))
+          }
         }
         let lnDot = hRec.normal.dot(mRec.l)
         throughput = throughput.mult(mRec.brdf).mult(lnDot).div(mRec.pdf)

@@ -28,7 +28,7 @@ abstract class Shape {
     this.material = material ?? new SimpleEmitter(new Vector3(1, 1, 0), 1)
   }
 
-  hit (r: ray.Ray) {
+  hit (r: ray.Ray, maxt = Infinity) {
     const rec = new HitRecord()
     rec.success = false
     return rec
@@ -44,7 +44,7 @@ class Sphere extends Shape{
     this.radius = radius
   }
   
-  hit (r: ray.Ray) {
+  hit (r: ray.Ray, maxt = Infinity) {
     const eps = 0.001
 
     const rec = new HitRecord()
@@ -73,6 +73,11 @@ class Sphere extends Shape{
       // t2だけが前にある場合
       t = t2
     }
+    // maxtより大きい場合
+    if (t > maxt) {
+      rec.success = false
+      return rec
+    }
     rec.success = true
     rec.t = t
     rec.pos = r.at(rec.t)
@@ -95,6 +100,14 @@ class Sphere extends Shape{
     rec.material = this.material
     return rec
   }
+
+  uniformSample ()  {
+    return this.center.add(randomOnUnitSphere()).mult(this.radius)
+  }
+
+  surfaceArea () {
+    return 4 * Math.PI * this.radius ** 2
+  }
 }
 
 class Quad extends Shape {
@@ -110,14 +123,14 @@ class Quad extends Shape {
     this.normal = u.cross(v)
   }
   
-  hit (r: ray.Ray) {
+  hit (r: ray.Ray, maxt = Infinity) {
     const eps = 0.001
 
     const rec = new HitRecord()
 
     const t = (this.normal.dot(this.origin) - this.normal.dot(r.origin)) / this.normal.dot(r.direction)
-    // 後ろにある場合
-    if (t < eps) {
+    // maxtより大きいか、後ろにある場合
+    if (t > maxt || t < eps) {
       rec.success = false
       return rec
     }
@@ -145,6 +158,16 @@ class Quad extends Shape {
     rec.uv = new Vector2(dpou, dpov)
     rec.material = this.material
     return rec
+  }
+
+  uniformSample ()  {
+    const rand1 = Math.random()
+    const rand2 = Math.random()
+    return this.origin.add(this.u.mult(rand1)).add(this.v.mult(rand2))
+  }
+
+  surfaceArea () {
+    return this.u.mag() * this.v.mag()
   }
 }
 
