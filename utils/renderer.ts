@@ -68,7 +68,7 @@ class Renderer {
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      const traced = this.traceNEE(ray, scene, max_depth)
+      const traced = this.trace(ray, scene, max_depth)
       // console.log(`${pixelColor.toString()}と${traced.toString()}を足す直前`)
       const added = pixelColor.add(traced)
       // console.log(added.toString())
@@ -83,19 +83,22 @@ class Renderer {
     // return test
     let rayColor = new Vector3(0, 0, 0)
     let throughput = new Vector3(1, 1, 1)
+    let eta = 1
     let depth = 0
     while (depth < max_depth) {
       const hRec = scene.hit(ray)
       if (hRec.success) {
-        const mRec = hRec.material.newSample(ray, hRec)
+        const mRec = hRec.material.newSample(ray, hRec, eta)
         if (mRec.Le) {
           rayColor = rayColor.add(mRec.Le.mult(throughput))
         }
         if (hRec.deletePath) {
           break
         }
-        let lnDot = hRec.normal.dot(mRec.l)
-        throughput = throughput.mult(mRec.brdf).mult(lnDot).div(mRec.pdf)
+        const bsdf = mRec.brdf ?? mRec.btdf
+        const normal = mRec.brdf ? hRec.normal : hRec.normal.mult(-1)
+        let lnDot = normal.dot(mRec.l)
+        throughput = throughput.mult(bsdf).mult(lnDot).div(mRec.pdf)
         ray = new Ray(hRec.pos, mRec.l)
       } else {
         rayColor = rayColor.add(scene.ambientColor.mult(throughput))

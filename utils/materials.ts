@@ -1,19 +1,28 @@
 import { Ray } from "./ray"
 import { randomOnHemiSphere, randomOnUnitSphere, saturate } from "./utils"
 import { HitRecord } from "./primitives"
-import { Texture } from "./textures"
+import { Texture, UniformColorTexture } from "./textures"
 import { Vector3 } from "./vector"
 
 class MaterialSampleRecord {
   brdf!: Vector3
+  btdf!: Vector3
   l!: Vector3
   pdf!: number
-  fresnel!: Vector3 | null
+  fresnel!: Vector3
   Le!: Vector3
 }
 
 const reflect = (vec: Vector3, normal: Vector3) => {
   return normal.mult(2 * normal.dot(vec)).sub(vec)
+}
+
+const refract = (vec: Vector3, normal: Vector3, relEta: number) => {
+  const sinThetaIn = (1 - normal.dot(vec) ** 2) ** (1/2)
+  const sinThetaOut = relEta * sinThetaIn
+  const cosThetaOut = (1 - sinThetaOut ** 2) ** (1/2)
+  const horizon = vec.sub(normal.mult(vec.dot(normal))).normalized()
+  return horizon.mult(-sinThetaOut).add(normal.mult(-cosThetaOut)).normalized()
 }
 
 const tangentToWorld = (
@@ -39,13 +48,27 @@ class Material {
   constructor() {
   }
 
+  newSample (r: Ray, hRec: HitRecord, eta = 1) {
+    throw new Error("not implemented")
+    return new MaterialSampleRecord()
+  }
+}
+
+class BRDF extends Material{
   newSample (r: Ray, hRec: HitRecord) {
     throw new Error("not implemented")
     return new MaterialSampleRecord()
   }
 }
 
-class DiffuseBRDF extends Material {
+class BTDF extends Material{
+  newSample (r: Ray, hRec: HitRecord, eta: number) {
+    throw new Error("not implemented")
+    return new MaterialSampleRecord()
+  }
+}
+
+class DiffuseBRDF extends BRDF {
   diffuseColor: Texture
 
   constructor(diffuseColor: Texture) {
@@ -74,7 +97,7 @@ class DiffuseBRDF extends Material {
   }
 }
 
-class MetalBRDF extends Material {
+class MetalBRDF extends BRDF {
   metalColor: Texture
 
   constructor(metalColor: Texture) {
@@ -93,7 +116,7 @@ class MetalBRDF extends Material {
   }
 }
 
-class MicrofacetSpecularBRDF extends Material {
+class MicrofacetSpecularBRDF extends BRDF {
   F0: Texture
   alpha: number
 
@@ -176,7 +199,7 @@ class MicrofacetSpecularBRDF extends Material {
   }
 }
 
-class DiffuseSpecularBRDF extends Material {
+class DiffuseSpecularBRDF extends BRDF {
   diffuseBRDF: DiffuseBRDF
   specularBRDF: MicrofacetSpecularBRDF
 
@@ -207,7 +230,7 @@ class DiffuseSpecularBRDF extends Material {
   }
 }
 
-class NormalDiffuseBRDF extends Material {
+class NormalDiffuseBRDF extends BRDF {
 
   constructor() {
     super()
@@ -228,7 +251,7 @@ class NormalDiffuseBRDF extends Material {
   }
 }
 
-class NormalMetalBRDF extends Material {
+class NormalMetalBRDF extends BRDF {
 
   constructor() {
     super()
@@ -245,7 +268,59 @@ class NormalMetalBRDF extends Material {
   }
 }
 
-class SimpleEmitter extends Material {
+class GrassBSDF extends Material {
+  color: Vector3
+  eta: number
+  constructor(color: Vector3, eta: number) {
+    super()
+    this.color = color
+    this.eta = eta
+  }
+
+  newSample (r: Ray, hRec: HitRecord, eta: number) {
+    const rec = new MaterialSampleRecord()
+    const v = r.direction.normalized().mult(-1)
+    const etai = hRec.normalInverted ? this.eta : eta
+    const etao = hRec.normalInverted ? eta : this.eta
+    const relEta = etai / etao
+
+    /* fresnel */
+    const F0Nc = ((etai - etao) / (etai + etao)) ** 2
+    const invColor = new Vector3(1, 1, 1).sub(this.color)
+    const F0 = invColor.mult(F0Nc)
+    rec.fresnel = this.schlickFresnel(hRec.normal.dot(v), F0)
+
+    const sinThetaIn = (1 - hRec.normal.dot(v) ** 2) ** (1/2)
+    const sinThetaOut = relEta * sinThetaIn
+    const totalRefl = sinThetaOut > 1
+
+    const probRefl = RGB2Luminance(rec.fresnel)
+
+    if (totalRefl || Math.random() < probRefl) {
+      rec.l = reflect(v, hRec.normal)
+      rec.brdf = rec.fresnel.div(rec.l.dot(hRec.normal));
+      rec.pdf = totalRefl ? 1 : 1 * probRefl
+    } else {
+      rec.l = refract(v, hRec.normal, relEta)
+      const fresnelTrans = new Vector3(1, 1, 1).sub(rec.fresnel)
+      rec.btdf = fresnelTrans.mult((1 / relEta) ** 2 / rec.l.dot(hRec.normal))
+      rec.pdf = 1 * (1 - probRefl)
+    }
+    return rec
+  }
+
+  schlickFresnel (vnDot: number, F0: Vector3, approx = true) {
+    if (approx) {
+      const oneMinusF0 = F0.mult(-1).add(new Vector3(1, 1, 1))
+      return oneMinusF0.mult((1 - vnDot) ** 5).add(F0)
+    }
+    else {
+      throw new Error("not implemented")
+    }
+  }
+}
+
+class SimpleEmitter extends BRDF {
   color: Vector3
   emittance: number
   constructor(color: Vector3, emittance: number) {
@@ -267,5 +342,5 @@ class SimpleEmitter extends Material {
 export {
   MaterialSampleRecord, Material, DiffuseBRDF,
   MetalBRDF, MicrofacetSpecularBRDF, NormalDiffuseBRDF, NormalMetalBRDF,
-  DiffuseSpecularBRDF, SimpleEmitter
+  DiffuseSpecularBRDF, GrassBSDF, SimpleEmitter
 }

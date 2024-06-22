@@ -16,6 +16,7 @@ class HitRecord {
   pos!: Vector3
   uv!: Vector2
   normal!: Vector3
+  normalInverted = false
   tangent!: Vector3
   binormal!: Vector3
   material!: Material
@@ -85,6 +86,7 @@ class Sphere extends Shape{
     const ndDot = normal.dot(r.direction)
     if (ndDot > 0) {
       normal = normal.mult(-1)
+      rec.normalInverted = true
     }
     rec.normal = normal
     let upVec = new Vector3(0, 1, 0)
@@ -151,6 +153,7 @@ class Quad extends Shape {
     const ndDot = normal.dot(r.direction)
     if (ndDot > 0) {
       normal = normal.mult(-1)
+      rec.normalInverted = true
     }
     rec.normal = normal
     rec.tangent = this.u.normalized()

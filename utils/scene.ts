@@ -3,7 +3,7 @@ import { Ray } from './ray';
 import { Camera } from './camera';
 import { Vector3 } from './vector';
 import { CheckerTexture, UniformColorTexture } from './textures';
-import { DiffuseBRDF, DiffuseSpecularBRDF, SimpleEmitter } from './materials';
+import { DiffuseBRDF, DiffuseSpecularBRDF, GrassBSDF, SimpleEmitter } from './materials';
 import { AreaLight, Emitter, PointLight } from './emitters';
 
 class Scene {
@@ -58,22 +58,35 @@ const defaultScene = () => {
   const tex1 = new CheckerTexture(
     new Vector3(0.7, 0.5, 0.5),
     new Vector3(0.8, 0.8, 0.8),
-    5
+    2.5
   )
   const tex2 = new UniformColorTexture(
     new Vector3(0.5, 0.5, 0.5)
   )
-  const mat1 = new DiffuseBRDF(tex1)
+  const mat1 = new GrassBSDF(new Vector3(1, 1, 1), 1.4)
   const mat2 = new DiffuseSpecularBRDF(
     tex2,  0.01
   )
+  const mat3 = new DiffuseBRDF(tex1)
   const light = new SimpleEmitter(
-    new Vector3(1, 1, 1), 1
+    new Vector3(1, 1, 1), 0
   )
   const ambColor = new Vector3(0.5, 0.5, 0.5)
   return new Scene([
     // new Sphere(
     //   new Vector3(0.7, 0.7, 0.7), 0.1, light),
+    new Quad(
+      new Vector3(0, -1, -1),
+      new Vector3(2, 0, 0),
+      new Vector3(0, 2, 0),
+      mat3
+    ),
+    new Quad(
+      new Vector3(-1, -1, 11),
+      new Vector3(2, 0, 0),
+      new Vector3(0, 2, 0),
+      light
+    ),
     new Sphere(
       new Vector3(0, 0, 0), 1, mat1),
     new Sphere(

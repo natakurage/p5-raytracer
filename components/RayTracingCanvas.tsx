@@ -31,7 +31,7 @@ export const RayTracingCanvas = () => {
     const ySize = 500
     p5.createCanvas(xSize, ySize).parent(canvasParentRef)
 
-    scene = rt.scene.exampleScenes.cornellScene()
+    scene = rt.scene.exampleScenes.defaultScene()
 
     renderer = new rt.renderer.Renderer(50)
   }
