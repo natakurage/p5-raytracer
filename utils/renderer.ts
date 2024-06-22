@@ -115,11 +115,12 @@ class Renderer {
     // return test
     let rayColor = new Vector3(0, 0, 0)
     let throughput = new Vector3(1, 1, 1)
+    let eta = 1
     let depth = 0
     while (depth < max_depth) {
       const hRec = scene.hit(ray)
       if (hRec.success) {
-        const mRec = hRec.material.newSample(ray, hRec)
+        const mRec = hRec.material.newSample(ray, hRec, eta)
         if (mRec.Le) {
           rayColor = rayColor.add(mRec.Le.mult(throughput))
         }
@@ -138,7 +139,10 @@ class Renderer {
             const cos2 = Math.abs(ERec.normal.dot(shadowRay.direction.mult(-1)))
             const G = cos1 * cos2 / distance ** 2
             const pdf = 1 / scene.sumSurfaceArea
-            const value = mRec.bsdf.mult(ERec.Le).mult(G / pdf)
+            const v = ray.direction.mult(-1).normalized()
+            const l = shadowRay.direction.normalized()
+            const bsdf = hRec.material.evalBRDF(hRec.uv, v, l, hRec.normal, eta, hRec.normalInverted)
+            const value = bsdf.mult(ERec.Le).mult(G / pdf)
             rayColor = rayColor.add(value.mult(throughput))
           }
         }

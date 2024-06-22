@@ -120,7 +120,8 @@ const cornellScene = () => {
   const rightMat = new DiffuseBRDF(greenTex)
   const wallMat = new DiffuseBRDF(whiteTex)
   const lightMat = new SimpleEmitter(new Vector3(1, 1, 1), 100)
-  const mat1 = new DiffuseBRDF(tex1)
+  // const mat1 = new DiffuseBRDF(tex1)
+  const mat1 = new GrassBSDF(new Vector3(1, 1, 1), 1.45)
   const mat2 = new DiffuseSpecularBRDF(tex2, 0.1)
   const ambColor = new Vector3(0.0, 0.0, 0.0)
   return new Scene([

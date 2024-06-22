@@ -2,9 +2,7 @@ import * as ray from "./ray"
 import { randomOnUnitSphere } from "./utils"
 import {
   MaterialSampleRecord, Material, DiffuseBRDF,
-  MetalBRDF, MicrofacetSpecularBRDF, NormalDiffuseBRDF,
-  NormalMetalBRDF,
-  DiffuseSpecularBRDF,
+  MetalBRDF, MicrofacetSpecularBRDF, DiffuseSpecularBRDF,
   SimpleEmitter
 } from "./materials"
 import { CheckerTexture, UniformColorTexture } from "./textures"
