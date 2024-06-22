@@ -18,7 +18,6 @@ class HitRecord {
   tangent!: Vector3
   binormal!: Vector3
   material!: Material
-  deletePath = false
 }
 
 abstract class Shape {
@@ -120,7 +119,7 @@ class Quad extends Shape {
     this.origin = origin
     this.u = u
     this.v = v
-    this.normal = u.cross(v)
+    this.normal = u.cross(v).normalized()
   }
   
   hit (r: ray.Ray, maxt = Infinity) {

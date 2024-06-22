@@ -24,14 +24,14 @@ class Renderer {
     ]
   }
 
-  render (p5: p5Types, scene: Scene, nSamples?: number, isNEE = false) {
+  render (p5: p5Types, scene: Scene, nSamples?: number, useNEE = false) {
     nSamples = nSamples ?? this.nSamples
 
     console.log("render started")
     
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
-        const pixelColor = this.renderPixel(p5, i, j, nSamples, scene, isNEE = false)
+        const pixelColor = this.renderPixel(p5, i, j, nSamples, scene, useNEE = false)
         p5.set(j, i, this.toP5Color(pixelColor))
       }
       if (i !== 0 && i % 50 === 0) {
@@ -42,7 +42,7 @@ class Renderer {
     console.log("render finished!")
   }
 
-  renderProgressive(p5: p5Types, linearPixels: Vector3[], scene: Scene, steps: number, totalSteps: number, isNEE = false) {
+  renderProgressive(p5: p5Types, linearPixels: Vector3[], scene: Scene, steps: number, totalSteps: number, useNEE = false) {
     if (linearPixels.length === 0) {
       for (let i = 0; i < p5.width * p5.height; i++) {
         linearPixels.push(new Vector3(0, 0, 0))
@@ -50,7 +50,7 @@ class Renderer {
     }
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
-        const pixelColor = this.renderPixel(p5, i, j, steps, scene, isNEE)
+        const pixelColor = this.renderPixel(p5, i, j, steps, scene, useNEE)
         const currentColor = linearPixels[i * p5.width + j]
         const nextColor = currentColor.mult(totalSteps).add(
           pixelColor.mult(steps)).div(totalSteps + steps)
@@ -63,13 +63,12 @@ class Renderer {
     return linearPixels
   }
 
-  renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene, isNEE = false) {
-    const trace = isNEE ? this.traceNEE : this.trace 
+  renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene, useNEE = false) {
     let pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      const traced = trace(ray, scene, max_depth)
+      const traced = this.trace(ray, scene, max_depth, useNEE)
       // console.log(`${pixelColor.toString()}と${traced.toString()}を足す直前`)
       const added = pixelColor.add(traced)
       // console.log(added.toString())
@@ -78,10 +77,7 @@ class Renderer {
     return pixelColor.div(nSamples)
   }
 
-  trace (ray: Ray, scene: Scene,  max_depth: number) {
-    // const test = new Vector3(1, 1, 1)
-    // // console.log(test.x, test.y, test.z)
-    // return test
+  trace (ray: Ray, scene: Scene,  max_depth: number, useNEE: boolean) {
     let rayColor = new Vector3(0, 0, 0)
     let throughput = new Vector3(1, 1, 1)
     let eta = 1
@@ -89,67 +85,36 @@ class Renderer {
     while (depth < max_depth) {
       const hRec = scene.hit(ray)
       if (hRec.success) {
-        const mRec = hRec.material.newSample(ray, hRec, eta)
+        const v = ray.direction.mult(-1).normalized()
+        const l = hRec.material.sampleDirection(ray, hRec, eta)
+        const mRec = hRec.material.newSample(hRec.uv, v, l, hRec.normal, hRec.normalInverted, eta)
         if (mRec.Le) {
           rayColor = rayColor.add(mRec.Le.mult(throughput))
         }
-        if (hRec.deletePath) {
-          break
-        }
-        const normal = mRec.isBtdf ? hRec.normal.mult(-1) : hRec.normal
-        let lnDot = normal.dot(mRec.l)
-        throughput = throughput.mult(mRec.bsdf).mult(lnDot).div(mRec.pdf)
-        ray = new Ray(hRec.pos, mRec.l)
-      } else {
-        rayColor = rayColor.add(scene.ambientColor.mult(throughput))
-        break
-      }
-      depth++
-    }
-    return rayColor
-  }
-
-  traceNEE (ray: Ray, scene: Scene,  max_depth: number) {
-    // const test = new Vector3(1, 1, 1)
-    // // console.log(test.x, test.y, test.z)
-    // return test
-    let rayColor = new Vector3(0, 0, 0)
-    let throughput = new Vector3(1, 1, 1)
-    let eta = 1
-    let depth = 0
-    while (depth < max_depth) {
-      const hRec = scene.hit(ray)
-      if (hRec.success) {
-        const mRec = hRec.material.newSample(ray, hRec, eta)
-        if (mRec.Le) {
-          rayColor = rayColor.add(mRec.Le.mult(throughput))
-        }
-        if (hRec.deletePath) {
+        if (mRec.finishTrace) {
           break
         }
         /* sample emitter */
-        if (scene.hasEmitter()) {
+        if (useNEE && scene.hasEmitter()) {
           const emitter = scene.selectEmitter()
           const ERec = emitter.randomSample()
           const shadowRay = new Ray(hRec.pos, ERec.pos.sub(hRec.pos).normalized())
           const distance = ERec.pos.sub(hRec.pos).mag()
-          const shadowRec = scene.hit(shadowRay, distance - 0.001)
-          if (!shadowRec.success) {
+          if (!scene.hit(shadowRay, distance - 0.001).success) {
             const cos1 = hRec.normal.dot(shadowRay.direction)
             const cos2 = Math.abs(ERec.normal.dot(shadowRay.direction.mult(-1)))
             const G = cos1 * cos2 / distance ** 2
             const pdf = 1 / scene.sumSurfaceArea
-            const v = ray.direction.mult(-1).normalized()
-            const l = shadowRay.direction.normalized()
-            const bsdf = hRec.material.evalBRDF(hRec.uv, v, l, hRec.normal, eta, hRec.normalInverted)
-            const value = bsdf.mult(ERec.Le).mult(G / pdf)
+            const shadowL = shadowRay.direction.normalized()
+            const shadowRec = hRec.material.newSample(hRec.uv, v, shadowL, hRec.normal, hRec.normalInverted, eta)
+            const value = shadowRec.bsdf.mult(ERec.Le).mult(G / pdf)
             rayColor = rayColor.add(value.mult(throughput))
           }
         }
         const normal = mRec.isBtdf ? hRec.normal.mult(-1) : hRec.normal
-        let lnDot = normal.dot(mRec.l)
+        let lnDot = normal.dot(l)
         throughput = throughput.mult(mRec.bsdf).mult(lnDot).div(mRec.pdf)
-        ray = new Ray(hRec.pos, mRec.l)
+        ray = new Ray(hRec.pos, l)
       } else {
         rayColor = rayColor.add(scene.ambientColor.mult(throughput))
         break

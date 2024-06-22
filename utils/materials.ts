@@ -7,10 +7,10 @@ import { Vector2, Vector3 } from "./vector"
 class MaterialSampleRecord {
   bsdf!: Vector3
   isBtdf = false
-  l!: Vector3
   pdf!: number
-  fresnel!: Vector3
   Le!: Vector3
+  finishTrace = false
+  isNEEEmitter = false
 }
 
 const reflect = (vec: Vector3, normal: Vector3) => {
@@ -48,38 +48,26 @@ class Material {
   constructor() {
   }
 
-  newSample (r: Ray, hRec: HitRecord, eta: number) {
+  sampleDirection (r: Ray, hRec: HitRecord, eta: number) {
+    throw new Error("not implemented")
+    return new Vector3(0, 0, 0)
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, normalInverted: boolean, eta: number) {
     throw new Error("not implemented")
     return new MaterialSampleRecord()
-  }
-
-  evalBSDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, eta: number, normalInverted: boolean) {
-    const vlDot = v.dot(l)
-    if (vlDot < 0) {
-      return this.evalBTDF(uv, v, l, normal, eta, normalInverted)
-    }
-    else
-      return this.evalBRDF(uv, v, l, normal, eta, normalInverted)
-  }
-
-  evalBRDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, eta: number, normalInverted: boolean) {
-    return new Vector3(0, 0, 0)
-  }
-
-  evalBTDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, eta: number, normalInverted: boolean) {
-    return new Vector3(0, 0, 0)
   }
 }
 
 class BRDF extends Material{
-  newSample (r: Ray, hRec: HitRecord) {
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
     throw new Error("not implemented")
     return new MaterialSampleRecord()
   }
 }
 
 class BTDF extends Material{
-  newSample (r: Ray, hRec: HitRecord, eta: number) {
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, normalInverted: boolean, eta: number) {
     throw new Error("not implemented")
     return new MaterialSampleRecord()
   }
@@ -93,14 +81,7 @@ class DiffuseBRDF extends BRDF {
     this.diffuseColor = diffuseColor
   }
 
-  evalBRDF (uv: Vector2) {
-    const diffuseColor = this.diffuseColor.sample(uv)
-    return diffuseColor.div(Math.PI)
-  }
-
-  newSample (r: Ray, hRec: HitRecord) {
-    const rec = new MaterialSampleRecord()
-
+  sampleDirection(r: Ray, hRec: HitRecord) {
     // sample light vector
     const rand1 = Math.random()
     const cosTheta = rand1 ** (1/2)
@@ -111,9 +92,20 @@ class DiffuseBRDF extends BRDF {
       sinTheta * Math.sin(phi),
       cosTheta
     )
-    rec.l = tangentToWorld(lInTangent, hRec.tangent, hRec.binormal, hRec.normal)
-    rec.bsdf = this.evalBRDF(hRec.uv)
-    rec.pdf = rec.l.dot(hRec.normal) / Math.PI
+    return tangentToWorld(lInTangent, hRec.tangent, hRec.binormal, hRec.normal)
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
+    const rec = new MaterialSampleRecord()
+    if (l.dot(normal) < 0) {
+      console.log(l.dot(normal), "dd")
+      rec.bsdf = new Vector3(0, 0, 0)
+      rec.pdf = 1
+    } else {
+      const diffuseColor = this.diffuseColor.sample(uv)
+      rec.bsdf = diffuseColor.div(Math.PI)
+      rec.pdf = l.dot(normal) / Math.PI
+    }
     return rec
   }
 }
@@ -126,23 +118,21 @@ class MetalBRDF extends BRDF {
     this.metalColor = metalColor
   }
 
-  evalBRDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
-    if (reflect(v, normal).sub(l).magSq() > 1e-6)
-      return new Vector3(0, 0, 0)
-    return this._evalBRDF(uv, l, normal)
+  getPDF (v: Vector3, l: Vector3, normal: Vector3) {
+    return 
   }
 
-  private _evalBRDF (uv: Vector2, l: Vector3, normal: Vector3) {
-    const metalColor = this.metalColor.sample(uv)
-    return metalColor.div(l.dot(normal))
-  }
-
-  newSample (r: Ray, hRec: HitRecord) {
-    const rec = new MaterialSampleRecord()
+  sampleDirection(r: Ray, hRec: HitRecord) {
     const v = r.direction.normalized().mult(-1)
-    rec.l = reflect(v, hRec.normal)
-    rec.pdf = 1
-    rec.bsdf = this._evalBRDF(hRec.uv, rec.l, hRec.normal)
+    return reflect(v, hRec.normal)
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
+    const rec = new MaterialSampleRecord()
+    const step = reflect(v, normal).sub(l).magSq() < 1e-8 ? 1 : 0
+    rec.pdf = step
+    const metalColor = this.metalColor.sample(uv)
+    rec.bsdf = metalColor.div(l.dot(normal)).mult(step)
     return rec
   }
 }
@@ -157,27 +147,7 @@ class MicrofacetSpecularBRDF extends BRDF {
     this.alpha = roughness ** 2
   }
 
-  evalBRDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
-    const half = v.add(l).mult(0.5)
-    const hnDot = saturate(half.dot(normal))
-    const lhDot = saturate(l.dot(half))
-    const ndf = this.GGX(hnDot)
-    const F0 = this.F0.sample(uv)
-    const fresnel = this.schlickFresnel(lhDot, F0)
-    const geo = this.hcssm(l, v, normal)
-    return this._evalBRDF(fresnel, ndf, geo, l, v, normal)
-  }
-
-  private _evalBRDF (fresnel: Vector3, ndf: number, geo: number, l: Vector3, v: Vector3, normal: Vector3) {
-    return fresnel.mult(ndf * geo).div(
-      Math.max(4 * l.dot(normal) * v.dot(normal), 1e-6)
-    )
-  }
-
-  newSample (r: Ray, hRec: HitRecord) {
-    const rec = new MaterialSampleRecord()
-    // this.testGGX()
-    
+  sampleDirection(r: Ray, hRec: HitRecord) {
     // sample half vector
     const rand1 = Math.random()
     const cosTheta = ((1 - rand1) / (rand1 * (this.alpha ** 2 - 1) + 1)) ** (1/2)
@@ -192,16 +162,30 @@ class MicrofacetSpecularBRDF extends BRDF {
 
     // calculate light vector from view and half vector
     const v = r.direction.normalized().mult(-1)
-    rec.l = reflect(v, half)
-    const hnDot = saturate(half.dot(hRec.normal))
-    const lhDot = saturate(rec.l.dot(half))
+    return reflect(v, half)
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
+    const rec = new MaterialSampleRecord()
+    if (l.dot(normal) < 0) {
+      rec.bsdf = new Vector3(0, 0, 0)
+      rec.pdf = 1
+      return rec
+    }
+    // this.testGGX()
+    const half = v.add(l).mult(0.5)
+    const hnDot = saturate(half.dot(normal))
+    const lhDot = saturate(l.dot(half))
 
     const ndf = this.GGX(hnDot)
-    const F0 = this.F0.sample(hRec.uv)
-    rec.fresnel = this.schlickFresnel(lhDot, F0)
-    const geo = this.hcssm(rec.l, v, hRec.normal)
-    rec.bsdf = this._evalBRDF(rec.fresnel, ndf, geo, rec.l, v, hRec.normal)
-    rec.pdf = ndf * hnDot / (Math.max(4 * rec.l.dot(half), 1e-6))
+    const F0 = this.F0.sample(uv)
+    const fresnel = this.schlickFresnel(lhDot, F0)
+    const geo = this.hcssm(l, v, normal)
+    
+    rec.bsdf = fresnel.mult(ndf * geo).div(
+      Math.max(4 * l.dot(normal) * v.dot(normal), 1e-6)
+    )
+    rec.pdf = ndf * hnDot / (Math.max(4 * l.dot(half), 1e-6))
     return rec
   }
 
@@ -255,35 +239,32 @@ class DiffuseSpecularBRDF extends BRDF {
     this.specularBRDF = new MicrofacetSpecularBRDF(baseColor, roughness)
   }
 
-  evalBRDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
-    const diffBsdf = this.diffuseBRDF.evalBRDF(uv)
-    const specBsdf = this.specularBRDF.evalBRDF(uv, v, l, normal)
-    const lhDot = v.add(l).mult(0.5).dot(l)
-    const fresnel = this.specularBRDF.schlickFresnel(lhDot, this.specularBRDF.F0.sample(uv))
-    return this._evalBRDF(fresnel, diffBsdf, specBsdf)
-  }
-
-  private _evalBRDF (specFresnel: Vector3, specBsdf: Vector3, diffBsdf: Vector3) {
-    const oneMinusF = specFresnel.mult(-1).add(new Vector3(1, 1, 1))
-    return diffBsdf.mult(oneMinusF).add(specBsdf)
-  }
-
-  newSample (r: Ray, hRec: HitRecord) {
-    const rec = new MaterialSampleRecord()
-    const diffRec = this.diffuseBRDF.newSample(r, hRec)
-    const specRec = this.specularBRDF.newSample(r, hRec)
-    if (specRec.fresnel === null) {
-      throw Error("internal error: specRec does not contain fresnel")
-    }
-    const fresnelLuminance = RGB2Luminance(specRec.fresnel)
+  sampleDirection(r: Ray, hRec: HitRecord) {
+    const v = r.direction.mult(-1).normalized()
+    const specL = this.specularBRDF.sampleDirection(r, hRec)
+    const specHalf = v.add(specL).mult(0.5)
+    const lhDot = specL.dot(specHalf)
+    const fresnel = this.specularBRDF.schlickFresnel(lhDot, this.specularBRDF.F0.sample(hRec.uv))
+    const fresnelLuminance = RGB2Luminance(fresnel)
     const probSpec = 1 / (2 - fresnelLuminance)
     if (Math.random() < probSpec) {
-      rec.l = specRec.l
+      return specL
     } else {
-      rec.l = diffRec.l
+      return this.diffuseBRDF.sampleDirection(r, hRec)
     }
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3) {
+    const rec = new MaterialSampleRecord()
+    const half = v.add(l).mult(0.5)
+    const lhDot = l.dot(half)
+    const fresnel = this.specularBRDF.schlickFresnel(lhDot, this.specularBRDF.F0.sample(uv))
+    const fresnelLuminance = RGB2Luminance(fresnel)
+    const diffRec = this.diffuseBRDF.newSample(uv, v, l, normal)
+    const specRec = this.specularBRDF.newSample(uv, v, l, normal)
     rec.pdf = (diffRec.pdf * (1 - fresnelLuminance) + specRec.pdf) / (2 - fresnelLuminance)
-    rec.bsdf = this._evalBRDF(specRec.fresnel, specRec.bsdf, diffRec.bsdf)
+    const oneMinusF = fresnel.mult(-1).add(new Vector3(1, 1, 1))
+    rec.bsdf = diffRec.bsdf.mult(oneMinusF).add(specRec.bsdf)
     return rec
   }
 }
@@ -297,63 +278,62 @@ class GrassBSDF extends Material {
     this.eta = eta
   }
 
-  evalBRDF (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, eta: number, normalInverted: boolean) {
-    const etai = normalInverted ? this.eta : eta
-    const etao = normalInverted ? eta : this.eta
+  calcF0 (etai: number, etao: number) {
     const F0Nc = ((etai - etao) / (etai + etao)) ** 2
     const invColor = new Vector3(1, 1, 1).sub(this.color)
-    const F0 = invColor.mult(F0Nc)
-    const fresnel = this.schlickFresnel(v.dot(normal), F0)
-    if (reflect(v, normal).sub(l).magSq() > 1e-6)
-      return new Vector3(0, 0, 0)
-    console.log(1)
-    return fresnel.div(l.dot(normal))
+    return invColor.mult(F0Nc)
   }
 
-  evalBTDF(uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, eta: number, normalInverted: boolean): Vector3 {
-    const etai = normalInverted ? this.eta : eta
-    const etao = normalInverted ? eta : this.eta
-    const relEta = etai / etao
-    const F0Nc = ((etai - etao) / (etai + etao)) ** 2
-    const invColor = new Vector3(1, 1, 1).sub(this.color)
-    const F0 = invColor.mult(F0Nc)
-    const fresnel = this.schlickFresnel(v.dot(normal), F0)
-    const fresnelTrans = new Vector3(1, 1, 1).sub(fresnel)
-    if (refract(v, normal, relEta).sub(l).magSq() < 1e-6) {
-      return fresnelTrans.mult((1 / relEta) ** 2 / l.dot(normal))
-    }
-    return new Vector3(0, 0, 0)
+  occurTotalRefl (v: Vector3, normal: Vector3, relEta: number) {
+    const sinThetaIn = (1 - normal.dot(v) ** 2) ** (1/2)
+    const sinThetaOut = relEta * sinThetaIn
+    return sinThetaOut > 1
   }
 
-  newSample (r: Ray, hRec: HitRecord, eta: number) {
-    const rec = new MaterialSampleRecord()
-    const v = r.direction.normalized().mult(-1)
+  sampleDirection(r: Ray, hRec: HitRecord, eta: number) {
+    const v = r.direction.mult(-1).normalized()
     const etai = hRec.normalInverted ? this.eta : eta
     const etao = hRec.normalInverted ? eta : this.eta
     const relEta = etai / etao
 
     /* fresnel */
-    const F0Nc = ((etai - etao) / (etai + etao)) ** 2
-    const invColor = new Vector3(1, 1, 1).sub(this.color)
-    const F0 = invColor.mult(F0Nc)
-    rec.fresnel = this.schlickFresnel(hRec.normal.dot(v), F0)
+    const F0 = this.calcF0(etai, etao)
+    const fresnel = this.schlickFresnel(hRec.normal.dot(v), F0)
+    const probRefl = RGB2Luminance(fresnel)
 
-    const sinThetaIn = (1 - hRec.normal.dot(v) ** 2) ** (1/2)
-    const sinThetaOut = relEta * sinThetaIn
-    const totalRefl = sinThetaOut > 1
-
-    const probRefl = RGB2Luminance(rec.fresnel)
+    const totalRefl = this.occurTotalRefl(v, hRec.normal, relEta)
 
     if (totalRefl || Math.random() < probRefl) {
-      rec.l = reflect(v, hRec.normal)
-      rec.bsdf = rec.fresnel.div(rec.l.dot(hRec.normal));
-      rec.pdf = totalRefl ? 1 : 1 * probRefl
+      return reflect(v, hRec.normal)
     } else {
-      rec.l = refract(v, hRec.normal, relEta)
-      const fresnelTrans = new Vector3(1, 1, 1).sub(rec.fresnel)
-      rec.bsdf = fresnelTrans.mult((1 / relEta) ** 2 / rec.l.dot(hRec.normal))
-      rec.isBtdf = true
+      return refract(v, hRec.normal, relEta)
+    }
+  }
+
+  newSample (uv: Vector2, v: Vector3, l: Vector3, normal: Vector3, normalInverted: boolean, eta: number) {
+    const rec = new MaterialSampleRecord()
+    const etai = normalInverted ? this.eta : eta
+    const etao = normalInverted ? eta : this.eta
+    const relEta = etai / etao
+
+    /* fresnel */
+    const F0 = this.calcF0(etai, etao)
+    const fresnel = this.schlickFresnel(normal.dot(v), F0)
+    const probRefl = RGB2Luminance(fresnel)
+
+    if (reflect(v, normal).sub(l).magSq() < 1e-8) {
+      rec.bsdf = fresnel.div(l.dot(normal))
+      const totalRefl = this.occurTotalRefl(v, normal, relEta)
+      rec.pdf = totalRefl ? 1 : 1 * probRefl
+    }
+    else if (refract(v, normal, relEta).sub(l).magSq() < 1e-8) {
+      const fresnelTrans = new Vector3(1, 1, 1).sub(fresnel)
+      rec.bsdf = fresnelTrans.mult((1 / relEta) ** 2 / l.dot(normal.mult(-1)))
       rec.pdf = 1 * (1 - probRefl)
+    }
+    else {
+      rec.bsdf = new Vector3(0, 0, 0)
+      rec.pdf = 0
     }
     return rec
   }
@@ -371,23 +351,23 @@ class GrassBSDF extends Material {
 
 class SimpleEmitter extends BRDF {
   color: Vector3
-  emittance: number
+  radiance: number
   constructor(color: Vector3, emittance: number) {
     super()
     this.color = color
-    this.emittance = emittance
+    this.radiance = emittance
   }
 
-  evalBRDF () {
+  sampleDirection () {
     return new Vector3(0, 0, 0)
   }
 
-  newSample (r: Ray, hRec: HitRecord) {
+  newSample () {
     const rec = new MaterialSampleRecord()
-    hRec.deletePath = true
-    rec.bsdf = this.evalBRDF()
+    rec.finishTrace = true
+    rec.bsdf = new Vector3(0, 0, 0)
     rec.pdf = 1
-    rec.Le = this.color.mult(this.emittance)
+    rec.Le = this.color.mult(this.radiance)
     return rec
   }
 }
