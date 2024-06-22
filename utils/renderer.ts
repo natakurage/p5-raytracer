@@ -24,14 +24,14 @@ class Renderer {
     ]
   }
 
-  render (p5: p5Types, scene: Scene, nSamples?: number) {
+  render (p5: p5Types, scene: Scene, nSamples?: number, isNEE = false) {
     nSamples = nSamples ?? this.nSamples
 
     console.log("render started")
     
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
-        const pixelColor = this.renderPixel(p5, i, j, nSamples, scene)
+        const pixelColor = this.renderPixel(p5, i, j, nSamples, scene, isNEE = false)
         p5.set(j, i, this.toP5Color(pixelColor))
       }
       if (i !== 0 && i % 50 === 0) {
@@ -42,7 +42,7 @@ class Renderer {
     console.log("render finished!")
   }
 
-  renderProgressive(p5: p5Types, linearPixels: Vector3[], scene: Scene, steps: number, totalSteps: number) {
+  renderProgressive(p5: p5Types, linearPixels: Vector3[], scene: Scene, steps: number, totalSteps: number, isNEE = false) {
     if (linearPixels.length === 0) {
       for (let i = 0; i < p5.width * p5.height; i++) {
         linearPixels.push(new Vector3(0, 0, 0))
@@ -50,7 +50,7 @@ class Renderer {
     }
     for (let i = 0; i < p5.height; i++) {
       for (let j = 0; j < p5.width; j++) {
-        const pixelColor = this.renderPixel(p5, i, j, steps, scene)
+        const pixelColor = this.renderPixel(p5, i, j, steps, scene, isNEE)
         const currentColor = linearPixels[i * p5.width + j]
         const nextColor = currentColor.mult(totalSteps).add(
           pixelColor.mult(steps)).div(totalSteps + steps)
@@ -63,12 +63,13 @@ class Renderer {
     return linearPixels
   }
 
-  renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene) {
+  renderPixel (p5: p5Types, i: number, j: number, nSamples: number, scene: Scene, isNEE = false) {
+    const trace = isNEE ? this.traceNEE : this.trace 
     let pixelColor = new Vector3(0, 0, 0)
     for (let sample = 0; sample < nSamples; sample++) {
       let ray = scene.camera.generateRay(j, i, p5.width, p5.height)
       const max_depth = 10
-      const traced = this.trace(ray, scene, max_depth)
+      const traced = trace(ray, scene, max_depth)
       // console.log(`${pixelColor.toString()}と${traced.toString()}を足す直前`)
       const added = pixelColor.add(traced)
       // console.log(added.toString())
@@ -141,7 +142,8 @@ class Renderer {
             rayColor = rayColor.add(value.mult(throughput))
           }
         }
-        let lnDot = hRec.normal.dot(mRec.l)
+        const normal = mRec.isBtdf ? hRec.normal.mult(-1) : hRec.normal
+        let lnDot = normal.dot(mRec.l)
         throughput = throughput.mult(mRec.bsdf).mult(lnDot).div(mRec.pdf)
         ray = new Ray(hRec.pos, mRec.l)
       } else {
