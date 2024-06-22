@@ -95,10 +95,9 @@ class Renderer {
         if (hRec.deletePath) {
           break
         }
-        const bsdf = mRec.brdf ?? mRec.btdf
-        const normal = mRec.brdf ? hRec.normal : hRec.normal.mult(-1)
+        const normal = mRec.isBtdf ? hRec.normal.mult(-1) : hRec.normal
         let lnDot = normal.dot(mRec.l)
-        throughput = throughput.mult(bsdf).mult(lnDot).div(mRec.pdf)
+        throughput = throughput.mult(mRec.bsdf).mult(lnDot).div(mRec.pdf)
         ray = new Ray(hRec.pos, mRec.l)
       } else {
         rayColor = rayColor.add(scene.ambientColor.mult(throughput))
@@ -138,12 +137,12 @@ class Renderer {
             const cos2 = Math.abs(ERec.normal.dot(shadowRay.direction.mult(-1)))
             const G = cos1 * cos2 / distance ** 2
             const pdf = 1 / scene.sumSurfaceArea
-            const value = mRec.brdf.mult(ERec.Le).mult(G / pdf)
+            const value = mRec.bsdf.mult(ERec.Le).mult(G / pdf)
             rayColor = rayColor.add(value.mult(throughput))
           }
         }
         let lnDot = hRec.normal.dot(mRec.l)
-        throughput = throughput.mult(mRec.brdf).mult(lnDot).div(mRec.pdf)
+        throughput = throughput.mult(mRec.bsdf).mult(lnDot).div(mRec.pdf)
         ray = new Ray(hRec.pos, mRec.l)
       } else {
         rayColor = rayColor.add(scene.ambientColor.mult(throughput))

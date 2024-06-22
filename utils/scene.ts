@@ -75,20 +75,20 @@ const defaultScene = () => {
   return new Scene([
     // new Sphere(
     //   new Vector3(0.7, 0.7, 0.7), 0.1, light),
-    new Quad(
-      new Vector3(0, -1, -1),
-      new Vector3(2, 0, 0),
-      new Vector3(0, 2, 0),
-      mat3
-    ),
-    new Quad(
-      new Vector3(-1, -1, 11),
-      new Vector3(2, 0, 0),
-      new Vector3(0, 2, 0),
-      light
-    ),
+    // new Quad(
+    //   new Vector3(0, -1, -1),
+    //   new Vector3(2, 0, 0),
+    //   new Vector3(0, 2, 0),
+    //   mat3
+    // ),
+    // new Quad(
+    //   new Vector3(-1, -1, 11),
+    //   new Vector3(2, 0, 0),
+    //   new Vector3(0, 2, 0),
+    //   light
+    // ),
     new Sphere(
-      new Vector3(0, 0, 0), 1, mat1),
+      new Vector3(0, 0, 0), 1, mat3),
     new Sphere(
       new Vector3(0, -101, 0), 100, mat2)
   ], [], camera, ambColor)

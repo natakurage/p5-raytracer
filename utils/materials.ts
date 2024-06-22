@@ -5,8 +5,8 @@ import { Texture, UniformColorTexture } from "./textures"
 import { Vector3 } from "./vector"
 
 class MaterialSampleRecord {
-  brdf!: Vector3
-  btdf!: Vector3
+  bsdf!: Vector3
+  isBtdf = false
   l!: Vector3
   pdf!: number
   fresnel!: Vector3
@@ -91,7 +91,7 @@ class DiffuseBRDF extends BRDF {
     )
     rec.l = tangentToWorld(lInTangent, hRec.tangent, hRec.binormal, hRec.normal)
     const diffuseColor = this.diffuseColor.sample(hRec.uv)
-    rec.brdf = diffuseColor.div(Math.PI)
+    rec.bsdf = diffuseColor.div(Math.PI)
     rec.pdf = rec.l.dot(hRec.normal) / Math.PI
     return rec
   }
@@ -110,7 +110,7 @@ class MetalBRDF extends BRDF {
     const v = r.direction.normalized().mult(-1)
     rec.l = reflect(v, hRec.normal)
     const metalColor = this.metalColor.sample(hRec.uv)
-    rec.brdf = metalColor.div(rec.l.dot(hRec.normal))
+    rec.bsdf = metalColor.div(rec.l.dot(hRec.normal))
     rec.pdf = 1
     return rec
   }
@@ -152,7 +152,7 @@ class MicrofacetSpecularBRDF extends BRDF {
     const F0 = this.F0.sample(hRec.uv)
     rec.fresnel = this.schlickFresnel(lhDot, F0)
     const geo = this.hcssm(rec.l, v, hRec.normal)
-    rec.brdf = rec.fresnel.mult(ndf * geo).div(
+    rec.bsdf = rec.fresnel.mult(ndf * geo).div(
       Math.max(4 * rec.l.dot(hRec.normal) * v.dot(hRec.normal), 1e-6)
     )
     rec.pdf = ndf * hnDot / (Math.max(4 * rec.l.dot(half), 1e-6))
@@ -225,7 +225,7 @@ class DiffuseSpecularBRDF extends BRDF {
       rec.l = diffRec.l
     }
     rec.pdf = (diffRec.pdf * (1 - fresnelLuminance) + specRec.pdf) / (2 - fresnelLuminance)
-    rec.brdf = diffRec.brdf.mult(oneMinusF).add(specRec.brdf)
+    rec.bsdf = diffRec.bsdf.mult(oneMinusF).add(specRec.bsdf)
     return rec
   }
 }
@@ -239,7 +239,7 @@ class NormalDiffuseBRDF extends BRDF {
   newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     const diffuseColor = hRec.binormal.add(new Vector3(1, 1, 1)).mult(0.5)
-    rec.brdf = diffuseColor.div(Math.PI)
+    rec.bsdf = diffuseColor.div(Math.PI)
     rec.pdf = 1 / (2 * Math.PI)
     let l = randomOnUnitSphere()
     let lnDot = hRec.normal.dot(l)
@@ -262,7 +262,7 @@ class NormalMetalBRDF extends BRDF {
     const v = r.direction.normalized().mult(-1)
     rec.l = reflect(v, hRec.normal)
     const metalColor = hRec.normal.add(new Vector3(1, 1, 1)).mult(0.5)
-    rec.brdf = metalColor.div(rec.l.dot(hRec.normal))
+    rec.bsdf = metalColor.div(rec.l.dot(hRec.normal))
     rec.pdf = 1
     return rec
   }
@@ -298,12 +298,13 @@ class GrassBSDF extends Material {
 
     if (totalRefl || Math.random() < probRefl) {
       rec.l = reflect(v, hRec.normal)
-      rec.brdf = rec.fresnel.div(rec.l.dot(hRec.normal));
+      rec.bsdf = rec.fresnel.div(rec.l.dot(hRec.normal));
       rec.pdf = totalRefl ? 1 : 1 * probRefl
     } else {
       rec.l = refract(v, hRec.normal, relEta)
       const fresnelTrans = new Vector3(1, 1, 1).sub(rec.fresnel)
-      rec.btdf = fresnelTrans.mult((1 / relEta) ** 2 / rec.l.dot(hRec.normal))
+      rec.bsdf = fresnelTrans.mult((1 / relEta) ** 2 / rec.l.dot(hRec.normal))
+      rec.isBtdf = true
       rec.pdf = 1 * (1 - probRefl)
     }
     return rec
@@ -332,7 +333,7 @@ class SimpleEmitter extends BRDF {
   newSample (r: Ray, hRec: HitRecord) {
     const rec = new MaterialSampleRecord()
     hRec.deletePath = true
-    rec.brdf = new Vector3(0, 0, 0)
+    rec.bsdf = new Vector3(0, 0, 0)
     rec.pdf = 1
     rec.Le = this.color.mult(this.emittance)
     return rec
